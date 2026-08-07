@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .mark { fill: #b08d57; } /* champagne gold — matches --accent light-mode value */
+    @media (prefers-color-scheme: dark) {
+      .mark { fill: #d4b483; } /* matches --accent dark-mode value */
+    }
+  </style>
+  <polygon class="mark" points="4,10 14.5,13 14.5,25 4,21" />
+  <polygon class="mark" points="28,10 17.5,13 17.5,25 28,21" />
+</svg>

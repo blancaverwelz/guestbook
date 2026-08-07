@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/*
+  Design tokens as CSS custom properties, not hardcoded per-component colors.
+  Every later chat that ships visible UI must consume these (or the `dark:`
+  Tailwind variant, which reads the same `prefers-color-scheme` signal via
+  darkMode: 'media') instead of raw hex values. A hardcoded light-only color
+  in a later chat is a bug, not a polish item.
+*/
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #f7f5f2;
+  --border: #e5e2dd;
+  --accent: #b08d57; /* champagne gold fallback, matches events.accent_color default */
+  --muted-foreground: #6b6660;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --foreground: #ededed;
+    --card: #1c1c1c;
+    --border: #2e2e2e;
+    --accent: #d4b483;
+    --muted-foreground: #a3a3a3;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
