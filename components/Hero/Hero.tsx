@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Dancing_Script, Cormorant_Garamond } from "next/font/google";
 import FloralEngrave from "./FloralEngrave";
 import { useAccentColor } from "./AccentColorProvider";
@@ -79,8 +80,21 @@ export default function Hero({ event }: HeroProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/10" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-6 pb-10 pt-24 text-center text-foreground md:pb-16">
-        <div>
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.08 } },
+        }}
+        className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-6 pb-10 pt-24 text-center text-foreground md:pb-16"
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 16 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+          }}
+        >
           <h1
             className={`${titleFont.className} text-4xl font-semibold tracking-wide md:text-6xl`}
           >
@@ -96,20 +110,26 @@ export default function Hero({ event }: HeroProps) {
               {formattedDate}
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Signature moment: floral engrave framing the calligraphy CTA
             line. This is the one deliberately ornamented element on the
             page — everything else stays quiet by design. Flex + gap (not
             negative margins) keeps this stable across viewport widths. */}
-        <div className="mt-2 flex w-full max-w-md flex-col items-center gap-1">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 16 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+          }}
+          className="mt-2 flex w-full max-w-md flex-col items-center gap-1"
+        >
           <FloralEngrave className="h-10 w-full text-foreground/70 md:h-14" />
           <p className={`${scriptFont.className} px-2 text-3xl leading-tight text-foreground md:text-5xl`}>
             Sign Our Guestbook
           </p>
           <FloralEngrave className="h-10 w-full rotate-180 text-foreground/70 md:h-14" />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

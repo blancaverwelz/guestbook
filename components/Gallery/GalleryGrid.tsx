@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import EmptyState from "./EmptyState";
 import Lightbox from "./Lightbox";
@@ -27,6 +28,48 @@ function GridSkeleton() {
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * Fades a thumbnail in as it actually finishes loading, rather than on
+ * mount — a photo whose network fetch is still in flight gets an
+ * intentional soft placeholder instead of a blank flash the instant it
+ * scrolls into view. `loaded` starts false on every mount, so this also
+ * naturally covers newly-approved photos arriving over Realtime.
+ */
+function GalleryThumbnail({
+  photo,
+  onOpen,
+}: {
+  photo: GalleryPhoto;
+  onOpen: () => void;
+}) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mb-3 block w-full break-inside-avoid overflow-hidden rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-accent"
+      aria-label={photo.uploader_name ? `View photo from ${photo.uploader_name}` : "View photo"}
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loaded ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
+        <Image
+          src={photo.thumbnail_url}
+          alt={photo.uploader_name ? `Photo shared by ${photo.uploader_name}` : "Guest photo"}
+          width={400}
+          height={400}
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+          className="h-auto w-full"
+          onLoad={() => setLoaded(true)}
+        />
+      </motion.div>
+    </button>
   );
 }
 
@@ -222,24 +265,7 @@ export default function GalleryGrid({ eventId }: { eventId: string }) {
     <div className="flex flex-col gap-3">
       <div className="columns-2 gap-3 sm:columns-3 md:columns-4 [column-fill:_balance]">
         {photos.map((photo, i) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => setLightboxIndex(i)}
-            className="mb-3 block w-full break-inside-avoid overflow-hidden rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-accent"
-            aria-label={
-              photo.uploader_name ? `View photo from ${photo.uploader_name}` : "View photo"
-            }
-          >
-            <Image
-              src={photo.thumbnail_url}
-              alt={photo.uploader_name ? `Photo shared by ${photo.uploader_name}` : "Guest photo"}
-              width={400}
-              height={400}
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-              className="h-auto w-full"
-            />
-          </button>
+          <GalleryThumbnail key={photo.id} photo={photo} onOpen={() => setLightboxIndex(i)} />
         ))}
       </div>
 
@@ -253,17 +279,19 @@ export default function GalleryGrid({ eventId }: { eventId: string }) {
         <p className="text-center text-sm text-muted-foreground">{error}</p>
       )}
 
-      {lightboxIndex !== null && (
-        <Lightbox
-          photos={photos.map((p) => ({
-            id: p.id,
-            image_url: p.image_url,
-            uploader_name: p.uploader_name,
-          }))}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      )}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <Lightbox
+            photos={photos.map((p) => ({
+              id: p.id,
+              image_url: p.image_url,
+              uploader_name: p.uploader_name,
+            }))}
+            initialIndex={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

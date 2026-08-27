@@ -31,6 +31,14 @@ Supabase (Postgres, Auth, Storage, Realtime) · Vercel.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (server-only — never commit this, never
      prefix it with `NEXT_PUBLIC_`)
+   - `NEXT_PUBLIC_SITE_URL` (added Chat 9) — the deployed site's own URL,
+     e.g. `https://your-guestbook.vercel.app`. Used only for canonical
+     links and Open Graph/Twitter image resolution (`metadataBase` in
+     `app/layout.tsx`). Falls back to `http://localhost:3000` if unset, so
+     its absence won't break a build — but social-share previews (e.g. a
+     link pasted into iMessage/Slack) will resolve image URLs against the
+     wrong origin until it's set. Set it in Vercel's env vars before
+     sharing any event link publicly.
 
 4. **Run the migration** — in the Supabase dashboard SQL editor, run, in
    order:
@@ -62,6 +70,76 @@ tokens, Supabase client helpers.
 Not built yet (later chats): `MessageForm`, `Guestbook` feed, `Gallery`
 grid + upload pipeline (HEIC conversion, compression, color extraction),
 admin auth, `Hero`/`CTASection`, Framer Motion.
+
+*(Everything above described the state as of Chat 1. As of Chat 9, all of
+it now exists — see "Motion, PWA & SEO" below for what Chat 9 specifically
+added.)*
+
+## Motion, PWA & SEO (Chat 9)
+
+**Framer Motion.** Installed as `framer-motion`. `MotionConfig
+reducedMotion="user"` wraps the whole app in `app/layout.tsx` — this is
+the single point that makes every animation added in this chat (Hero,
+CTASection, guestbook/gallery fade-ins, Lightbox, page transitions)
+automatically respect a guest's OS-level "reduce motion" setting, rather
+than each component needing its own check. Page-transition fade lives in
+`app/template.tsx`, which is a fade-**in** only (not a full crossfade) —
+Next's template.tsx convention remounts on every navigation but doesn't
+give an exit-animation hook without a routing-intercept library, which
+was out of scope for this pass.
+
+**PWA — per-event manifest, not a single static one.** There's no
+`app/page.tsx` root route (see below), and the app is multi-tenant — several
+events can be live at once. A shared `public/manifest.json` would either
+404 on `start_url: "/"` or let one event's installed icon launch into a
+different event's pages. Instead, `app/events/[slug]/manifest.webmanifest/
+route.ts` generates a manifest per event on request, with `start_url` and
+`scope` both pinned to `/events/<slug>`, and `name`/`theme_color` pulled
+from that event's own data. Each event's landing page links to its own
+manifest via `generateMetadata`'s `manifest` field — nothing at the app
+root references a manifest at all.
+
+Icons (`public/icon-192.png`, `icon-512.png`, `maskable-icon-512.png`) and
+three common-device splash screens (`public/splash/`) were generated from
+the existing `Logo.tsx` mark, not hand-designed — swap them for real
+branded assets whenever there's design time for it.
+
+**Offline shell.** `public/sw.js` is a small hand-rolled service worker
+(network-first for page navigations with a cache fallback, cache-first for
+static assets), registered by `components/PWA/ServiceWorkerRegister.tsx`.
+**Registers in production builds only** — a service worker in `next dev`
+will happily cache a hot-reloaded chunk and keep serving it stale after
+the dev server rebuilds, which reads as a phantom bug in whatever you
+touch next. Only pages a guest has actually visited will load offline;
+this is intentional (see the comment at the top of `sw.js`), not a partial
+implementation of something bigger.
+
+**SEO.** `generateMetadata` added to all four event routes (landing,
+message, guestbook, gallery) — dynamic `<title>`, description, canonical
+link, and (landing page only) Open Graph/Twitter card data using the
+event's cover photo when one is set. All four wrap their existing
+`getEventBySlug` fetcher in React's `cache()` so `generateMetadata` and the
+page component share one Supabase query instead of firing it twice per
+request.
+
+**Accessibility.** Beyond the reduced-motion handling above: `Lightbox`
+now moves focus into the dialog on open and restores it to the grid button
+that triggered it on close — previously neither happened, so a keyboard/
+screen-reader user opening a photo stayed "focused" on a button sitting
+underneath a fullscreen overlay.
+
+**Performance.** Root layout preconnects to the Supabase project origin
+(`<link rel="preconnect">`), shaving the DNS+TLS handshake off the first
+Storage image request on the gallery/landing pages. Gallery thumbnails now
+fade in on their actual `onLoad` event rather than on mount, avoiding a
+blank-then-pop flash while the image is still in flight.
+
+**Not independently verified: the Lighthouse mobile score 95+ success
+criterion from the chat spec.** That needs a real Lighthouse run against a
+deployed URL (or `next start` + Chrome DevTools locally) — there's no way
+to run that from this sandboxed build environment. Worth checking before
+calling this chat's success criteria fully met; the [pre-event
+checklist](#pre-event-checklist) below is a good place to fold that in.
 
 ## Keeping the Supabase project alive
 
@@ -102,6 +180,16 @@ of development:
       photos) work from the host's phone, not just desktop.
 - [ ] Check Vercel's Cron Jobs dashboard to confirm `/api/keep-alive` has
       actually been firing on schedule, not just that it's configured.
+- [ ] Run Lighthouse (mobile) against the live event landing page and
+      confirm a 95+ performance score — this was a Chat 9 success
+      criterion that couldn't be verified from the build sandbox; see
+      "Motion, PWA & SEO" above.
+- [ ] On an actual phone, visit a live event page, use the browser's
+      "Add to Home Screen," and confirm the installed icon opens straight
+      to that event (not a 404) and shows the right name/icon.
+- [ ] With the installed PWA open, enable airplane mode and confirm a
+      previously-visited page (e.g. the page you installed from) still
+      loads; a never-visited page failing offline is expected, not a bug.
 
 ## Verifying RLS manually
 

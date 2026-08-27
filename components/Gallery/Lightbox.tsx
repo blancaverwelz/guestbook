@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export type LightboxPhoto = {
@@ -39,6 +40,28 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
   const panOriginRef = useRef({ x: 0, y: 0 });
   const swipeStartXRef = useRef<number | null>(null);
   const lastTapRef = useRef(0);
+
+  // Focus management — the grid button that opened this was never actually
+  // given up by focus (the lightbox renders as a sibling overlay, not a
+  // native <dialog>), so without this a screen reader or keyboard user
+  // stays "focused" on a photo grid button sitting underneath a fullscreen
+  // overlay. dialogRef gets focus on open; the triggering element (read
+  // once, at mount, before anything else can steal focus) gets it back on
+  // close.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+
+    return () => {
+      triggerElementRef.current?.focus?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally
+    // run once: this captures the pre-open focus target and restores it on
+    // unmount, not on every re-render.
+  }, []);
 
   const resetZoom = useCallback(() => {
     setScale(1);
@@ -143,11 +166,17 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
   if (!photo) return null;
 
   return (
-    <div
+    <motion.div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Photo viewer"
-      className="fixed inset-0 z-50 flex flex-col bg-black/95"
+      tabIndex={-1}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="fixed inset-0 z-50 flex flex-col bg-black/95 outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -179,15 +208,34 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
             transition: pinchStartDistRef.current || panStartRef.current ? "none" : "transform 150ms ease-out",
           }}
         >
-          <Image
-            key={photo.id}
-            src={photo.image_url}
-            alt={photo.uploader_name ? `Photo shared by ${photo.uploader_name}` : "Guest photo"}
-            fill
-            sizes="100vw"
-            className="object-contain"
-            priority
-          />
+          {/*
+            Fade-on-change lives on this inner wrapper, not the transform
+            div above — that div's inline `transform`/`transition` style is
+            the pinch/pan/swipe machinery from Chat 5 and is intentionally
+            untouched here (guardrail: "do not modify any state logic").
+            AnimatePresence + a key on photo.id gives the "zoom" polish
+            (fade+scale) purely as a visual layer on top, independent of
+            the manual zoom-state transform.
+          */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={photo.id}
+              className="relative h-full w-full"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <Image
+                src={photo.image_url}
+                alt={photo.uploader_name ? `Photo shared by ${photo.uploader_name}` : "Guest photo"}
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {index > 0 && (
@@ -211,6 +259,6 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

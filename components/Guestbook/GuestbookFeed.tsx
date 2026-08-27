@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useGuestbookFeed } from "@/hooks/useGuestbookFeed";
 import MessageCard from "./MessageCard";
 import EmptyState from "./EmptyState";
@@ -65,14 +66,23 @@ export default function GuestbookFeed({ eventId }: GuestbookFeedProps) {
   return (
     <div className="flex flex-col gap-3">
       <ul className="flex flex-col gap-3">
-        {messages.map((m) => (
-          <MessageCard
-            key={m.id}
-            name={m.name}
-            message={m.message}
-            createdAt={m.created_at}
-          />
-        ))}
+        {/* initial (default true) is intentional here, not an oversight —
+            it's what makes the very first batch of messages play the
+            staggered fade-in on load. AnimatePresence's `initial` prop
+            only affects children present at AnimatePresence's own mount,
+            which for this component is exactly "the first page of
+            messages," since nothing renders until `loading` is false. */}
+        <AnimatePresence mode="popLayout">
+          {messages.map((m, i) => (
+            <MessageCard
+              key={m.id}
+              name={m.name}
+              message={m.message}
+              createdAt={m.created_at}
+              index={i}
+            />
+          ))}
+        </AnimatePresence>
       </ul>
 
       {hasMore && (

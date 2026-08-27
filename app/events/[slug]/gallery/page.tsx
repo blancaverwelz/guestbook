@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import type { Metadata } from "next";
 import { UploadButton } from "@/components/UploadButton/UploadButton";
 import GalleryGrid from "@/components/Gallery/GalleryGrid";
 
@@ -9,8 +11,11 @@ import GalleryGrid from "@/components/Gallery/GalleryGrid";
  * involved on this guest-facing route). RLS on `events` already restricts
  * reads to published rows; `.eq("published", true)` here is defense in
  * depth, not the actual gate.
+ *
+ * Wrapped in React's cache() so generateMetadata and the page component
+ * share one query instead of two.
  */
-async function getEventBySlug(slug: string) {
+const getEventBySlug = cache(async function getEventBySlug(slug: string) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -25,10 +30,22 @@ async function getEventBySlug(slug: string) {
 
   if (error || !data) return null;
   return data;
-}
+});
 
 interface GalleryPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: GalleryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getEventBySlug(slug);
+  if (!event) return {};
+
+  return {
+    title: `Gallery — ${event.title}`,
+    description: `Photos shared by guests for ${event.title}.`,
+    alternates: { canonical: `/events/${slug}/gallery` },
+  };
 }
 
 export default async function GalleryPage({ params }: GalleryPageProps) {
