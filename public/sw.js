@@ -9,10 +9,10 @@
  * still fail — that's expected, not a bug.
  *
  * Strategy:
- *  - Navigations (HTML documents): network-first, falling back to cache.
- *    Guests should always see live data (new messages/photos) when online;
- *    cache is a fallback for offline, not a way to serve stale content
- *    over a working connection.
+ *  - Document requests (see isDocumentRequest below): network-first,
+ *    falling back to cache. Guests should always see live data (new
+ *    messages/photos) when online; cache is a fallback for offline, not a
+ *    way to serve stale content over a working connection.
  *  - Everything else same-origin GET (JS/CSS/images/fonts): cache-first,
  *    filling the cache in the background on first fetch. These are
  *    content-hashed or rarely-changing static assets, so cache-first is
@@ -22,9 +22,37 @@
  * untouched — never intercepted or cached. Caching a moderation-gated
  * photo or a Realtime handshake would be actively wrong, not just
  * unnecessary.
+ *
+ * Chat 9 hotfix (Issue 4) — "document request" used to mean only
+ * `request.mode === "navigate"`. That's correct for a hard reload/typed
+ * URL, but Next.js's client-side <Link> navigation (how guests actually
+ * move between the landing/message/guestbook/gallery pages in normal use)
+ * never issues a navigate-mode request at all — it fetches an RSC payload
+ * in the background instead (same pathname, but with a `?_rsc=...` query
+ * string, and no `mode: "navigate"`). That request used to fall into the
+ * generic cache-first branch and get cached under its `?_rsc=...` URL,
+ * which a later real navigate-mode offline reload would never look up
+ * (different cache key, no query string) — that mismatch was the entire
+ * bug: pages reached only by clicking through the app never had their
+ * plain-URL HTML actually cached, so they 404'd offline even though the
+ * guest had genuinely "visited" them.
+ *
+ * The fix has two parts, both needed together:
+ *  1. Recognize a document request by its `Accept: text/html` header too,
+ *     not just navigate mode — see components/PWA/ServiceWorkerRegister.tsx,
+ *     which now fires an explicit same-URL fetch with that header on every
+ *     client-side route change, specifically so the SW has something to
+ *     cache under the plain pathname (no `?_rsc=`) for pages that were
+ *     only ever soft-navigated to.
+ *  2. Treat that primer fetch as a document request here, so it gets
+ *     cached under the same key a later real navigation would ask for.
  */
 
 const CACHE_NAME = "guestbook-shell-v1";
+
+function isDocumentRequest(request) {
+  return request.mode === "navigate" || (request.headers.get("accept") || "").includes("text/html");
+}
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -53,11 +81,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate") {
+  if (isDocumentRequest(request)) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
+          // Cache under the request's own URL. The primer fetch in
+          // ServiceWorkerRegister.tsx deliberately requests the plain
+          // pathname (no `?_rsc=`), so this ends up keyed identically to
+          // what a later real navigate-mode request for that same page
+          // will ask for.
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
         })

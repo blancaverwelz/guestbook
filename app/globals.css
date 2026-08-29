@@ -14,6 +14,14 @@
   --card: #f7f5f2;
   --border: #e5e2dd;
   --accent: #b08d57; /* champagne gold fallback, matches events.accent_color default */
+  /* Added Chat 9 hotfix (Issue 2) — pairs with --accent for text/icons
+     sitting on an accent-filled surface. #1a1a1a matches --foreground
+     above and is the correct WCAG AA pairing for the champagne-gold
+     default; AccentColorProvider overrides both together per-event, so
+     this default only ever shows before that JS runs, or on
+     admin pages (which never mount the provider — see
+     components/Hero/AccentColorProvider.tsx). */
+  --accent-foreground: #1a1a1a;
   --muted-foreground: #6b6660;
 }
 
@@ -24,6 +32,10 @@
     --card: #1c1c1c;
     --border: #2e2e2e;
     --accent: #d4b483;
+    /* #d4b483 is still a light/tan swatch even in dark mode, so it still
+       wants dark text on top — same reasoning as the light-mode pairing
+       above, not a copy-paste oversight. */
+    --accent-foreground: #1a1a1a;
     --muted-foreground: #a3a3a3;
   }
 }

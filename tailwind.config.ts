@@ -18,6 +18,7 @@ const config: Config = {
         card: "var(--card)",
         border: "var(--border)",
         accent: "var(--accent)",
+        "accent-foreground": "var(--accent-foreground)",
         "muted-foreground": "var(--muted-foreground)",
       },
     },

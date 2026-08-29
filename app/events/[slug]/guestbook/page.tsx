@@ -1,30 +1,12 @@
-import { cache } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import GuestbookFeed from "@/components/Guestbook/GuestbookFeed";
+import { getEventBySlug } from "@/lib/events";
 
-// Plain anon-key client, matching app/events/[slug]/message/page.tsx —
-// deliberately not lib/supabase/server.ts, which is reserved for admin
-// (service-role) routes only.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Wrapped in React's cache() so generateMetadata and the page component
-// share one query instead of two.
-const getEventBySlug = cache(async function getEventBySlug(slug: string) {
-  const { data, error } = await supabase
-    .from("events")
-    .select("id, title")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single();
-
-  if (error || !data) return null;
-  return data;
-});
+// Chat 9 hotfix (Issue 2): was a local near-duplicate fetcher (its own
+// `createClient` + `id, title` select). Now imports the same shared,
+// cache()-wrapped fetcher used by the layout — see
+// app/events/[slug]/layout.tsx and lib/events.ts.
 
 interface GuestbookPageProps {
   params: Promise<{ slug: string }>;

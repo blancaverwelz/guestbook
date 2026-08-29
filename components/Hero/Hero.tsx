@@ -91,8 +91,13 @@ export default function Hero({ event }: HeroProps) {
       >
         <motion.div
           variants={{
-            hidden: { opacity: 0, y: 16 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+            // Was y:16 / 0.25s — real-device testing found this too subtle
+            // to register as an intentional entrance. Bumped toward the
+            // top of the original 200–300ms allowance and a slightly
+            // larger vertical travel, not a different animation style —
+            // still a plain fade/rise, still restrained.
+            hidden: { opacity: 0, y: 22 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
           }}
         >
           <h1
@@ -118,8 +123,8 @@ export default function Hero({ event }: HeroProps) {
             negative margins) keeps this stable across viewport widths. */}
         <motion.div
           variants={{
-            hidden: { opacity: 0, y: 16 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+            hidden: { opacity: 0, y: 22 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
           }}
           className="mt-2 flex w-full max-w-md flex-col items-center gap-1"
         >

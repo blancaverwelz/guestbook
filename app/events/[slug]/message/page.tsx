@@ -1,39 +1,13 @@
-import { cache } from "react";
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
 import { MessageForm } from "@/components/MessageForm/MessageForm";
+import { getEventBySlug } from "@/lib/events";
 
-/**
- * Stateless, anonymous read of a single published event by slug.
- *
- * Wrapped in React's cache() so generateMetadata and the page component
- * share one query instead of two.
- *
- * This is a guest-facing route with no session/cookies involved, so a plain
- * anon-key client is used here rather than the cookie-aware @supabase/ssr
- * helpers used for the browser client. This is intentionally NOT the
- * service-role client from lib/supabase/server.ts — that's reserved for
- * admin routes only (see Shared Reference). RLS on `events` already
- * restricts reads to published rows; the `.eq("published", true)` below is
- * defense-in-depth, same pattern as the Chat 3/5 read queries.
- */
-const getEventBySlug = cache(async function getEventBySlug(slug: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const { data, error } = await supabase
-    .from("events")
-    .select("id, title")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single();
-
-  if (error || !data) return null;
-  return data;
-});
+// Chat 9 hotfix (Issue 2): was a local near-duplicate of this fetcher
+// selecting only `id, title`. Now imports the same shared, cache()-wrapped
+// fetcher used by the layout (see app/events/[slug]/layout.tsx and
+// lib/events.ts) — same request, same cached result, no second Supabase
+// round trip, and one fewer copy of this query to keep in sync.
 
 interface MessagePageProps {
   params: Promise<{ slug: string }>;

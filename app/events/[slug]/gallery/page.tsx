@@ -1,36 +1,12 @@
-import { cache } from "react";
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
 import { UploadButton } from "@/components/UploadButton/UploadButton";
 import GalleryGrid from "@/components/Gallery/GalleryGrid";
+import { getEventBySlug } from "@/lib/events";
 
-/**
- * Same pattern as the Chat 3 message page: stateless anonymous read of a
- * single published event by slug, plain anon-key client (no cookies/session
- * involved on this guest-facing route). RLS on `events` already restricts
- * reads to published rows; `.eq("published", true)` here is defense in
- * depth, not the actual gate.
- *
- * Wrapped in React's cache() so generateMetadata and the page component
- * share one query instead of two.
- */
-const getEventBySlug = cache(async function getEventBySlug(slug: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const { data, error } = await supabase
-    .from("events")
-    .select("id, title")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single();
-
-  if (error || !data) return null;
-  return data;
-});
+// Chat 9 hotfix (Issue 2): was a local near-duplicate fetcher. Now imports
+// the same shared, cache()-wrapped fetcher used by the layout — see
+// app/events/[slug]/layout.tsx and lib/events.ts.
 
 interface GalleryPageProps {
   params: Promise<{ slug: string }>;

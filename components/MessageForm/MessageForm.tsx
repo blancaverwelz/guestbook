@@ -84,7 +84,7 @@ export function MessageForm({ eventId }: MessageFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-md bg-accent px-4 py-2 font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md bg-accent px-4 py-2 font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Sending..." : state === "ERROR" ? "Try again" : "Send message"}
       </button>

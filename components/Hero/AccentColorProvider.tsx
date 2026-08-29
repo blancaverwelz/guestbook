@@ -38,6 +38,26 @@ interface AccentColorProviderProps {
  * extraction succeeds and clears WCAG AA. If there's no cover image, or
  * extraction fails (CORS, decode error, low-contrast result), it just
  * stays on the fallback.
+ *
+ * Exposes the resolved accent two ways, deliberately:
+ *  1. React context (`useAccentColor()`) for components that need the
+ *     literal hex values in JS — Hero/CTASection use this to set inline
+ *     styles directly.
+ *  2. `--accent`/`--accent-foreground` CSS custom properties on a
+ *     wrapping element, for every *other* guest-facing component
+ *     (MessageForm, UploadButton, GalleryGrid) that already styles itself
+ *     with the `bg-accent`/`text-accent`/`ring-accent`/`border-accent`
+ *     Tailwind utilities. Those utilities read the CSS variable, not the
+ *     React context — before this hotfix, `--accent` was only ever the
+ *     static value from globals.css, so nothing outside Hero/CTASection
+ *     ever reflected the resolved per-event color (Chat 9 hotfix, Issue 2).
+ *
+ * The wrapping div is scoped to whatever this provider wraps — currently
+ * the whole `/events/[slug]/*` subtree via the shared layout — not
+ * `document.documentElement`. Setting it globally on the document root
+ * would leak the last-viewed event's accent into `/admin`, which uses the
+ * exact same `bg-accent`/`text-accent` class names for its own static
+ * champagne-gold branding and must NOT vary per event.
  */
 export default function AccentColorProvider({
   coverImage,
@@ -63,5 +83,18 @@ export default function AccentColorProvider({
     };
   }, [coverImage, fallbackAccent]);
 
-  return <AccentColorContext.Provider value={accent}>{children}</AccentColorContext.Provider>;
+  return (
+    <AccentColorContext.Provider value={accent}>
+      <div
+        style={
+          {
+            "--accent": accent.color,
+            "--accent-foreground": accent.textColor,
+          } as React.CSSProperties
+        }
+      >
+        {children}
+      </div>
+    </AccentColorContext.Provider>
+  );
 }

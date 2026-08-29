@@ -73,7 +73,7 @@ export function UploadButton({ eventId }: UploadButtonProps) {
         type="button"
         disabled={isBusy}
         onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         <ImagePlus size={18} aria-hidden />
         {isBusy ? stageLabel : "Add a photo"}
