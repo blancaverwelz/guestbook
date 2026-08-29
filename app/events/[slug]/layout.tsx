@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import AccentColorProvider from "@/components/Hero/AccentColorProvider";
+import Navbar from "@/components/Navbar/Navbar";
 import { getEventBySlug } from "@/lib/events";
 
 /**
@@ -19,6 +20,12 @@ import { getEventBySlug } from "@/lib/events";
  * /events/[slug]/*, fixes both: every child page gets the same resolved
  * accent, from one shared fetch (see lib/events.ts), without each page
  * needing its own copy of this wrapping/fetching logic.
+ *
+ * Chat 11 — <Navbar> is mounted here too, inside the provider, for the
+ * same reason: one persistent guest nav (Event / Message / Guestbook /
+ * Gallery) shared by all four core pages instead of four separate copies,
+ * and it needs to be inside <AccentColorProvider> to read the resolved
+ * accent via useAccentColor() for its active-link color.
  *
  * This also centralizes the published/not-found gate for the whole
  * subtree — each page.tsx still has its own defensive `if (!event)
@@ -46,6 +53,7 @@ export default async function EventLayout({
       coverImage={event.cover_image}
       fallbackAccent={event.accent_color ?? "#B08D57"}
     >
+      <Navbar slug={slug} eventTitle={event.title} />
       {children}
     </AccentColorProvider>
   );
