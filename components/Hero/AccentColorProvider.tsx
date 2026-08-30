@@ -1,7 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { extractDominantColor, resolveAccentColor, type ResolvedAccent } from "@/lib/colorExtraction";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  extractDominantColor,
+  resolveStoredAccent,
+  parseStoredAccent,
+  type ResolvedAccent,
+} from "@/lib/colorExtraction";
 
 /**
  * Context, not a render-prop. A Server Component (page.tsx) can pass plain
@@ -27,17 +32,25 @@ export function useAccentColor(): ResolvedAccent {
 
 interface AccentColorProviderProps {
   coverImage: string | null;
-  fallbackAccent: string;
+  /**
+   * Raw `events.accent_color` value, unparsed — Chat 13 follow-up. Renamed
+   * from `fallbackAccent` because this can now represent either an
+   * automatic-mode fallback or a `custom:`-prefixed override; parsing
+   * happens once, here, via `parseStoredAccent`.
+   */
+  storedAccentColor: string | null;
   children: React.ReactNode;
 }
 
 /**
  * Resolves the accent color once per page (not once per component that
- * needs it). Starts from the contrast-safe fallback immediately — no
- * flash of unstyled content — then swaps to the extracted color if/when
- * extraction succeeds and clears WCAG AA. If there's no cover image, or
- * extraction fails (CORS, decode error, low-contrast result), it just
- * stays on the fallback.
+ * needs it). Starts from the contrast-safe resolved value synchronously
+ * (Custom: the admin's color immediately, no async work needed; Automatic:
+ * the fallback) — no flash of unstyled content — then, in Automatic mode
+ * only, swaps to the extracted color if/when extraction succeeds and
+ * clears WCAG AA. Custom mode never attempts extraction at all: the admin's
+ * chosen color takes precedence unconditionally (Chat 13 follow-up), so
+ * there's no network/canvas work to skip past, not just a result to ignore.
  *
  * Exposes the resolved accent two ways, deliberately:
  *  1. React context (`useAccentColor()`) for components that need the
@@ -61,18 +74,29 @@ interface AccentColorProviderProps {
  */
 export default function AccentColorProvider({
   coverImage,
-  fallbackAccent,
+  storedAccentColor,
   children,
 }: AccentColorProviderProps) {
-  const [accent, setAccent] = useState<ResolvedAccent>(() => resolveAccentColor(null, fallbackAccent));
+  const stored = useMemo(() => parseStoredAccent(storedAccentColor), [storedAccentColor]);
+  const [accent, setAccent] = useState<ResolvedAccent>(() => resolveStoredAccent(stored, null));
 
   useEffect(() => {
-    if (!coverImage) return;
+    // Custom always wins immediately and never triggers extraction — see
+    // doc comment above.
+    if (stored.mode === "custom") {
+      setAccent(resolveStoredAccent(stored, null));
+      return;
+    }
+
+    if (!coverImage) {
+      setAccent(resolveStoredAccent(stored, null));
+      return;
+    }
 
     let cancelled = false;
     extractDominantColor(coverImage)
       .then((extracted) => {
-        if (!cancelled) setAccent(resolveAccentColor(extracted, fallbackAccent));
+        if (!cancelled) setAccent(resolveStoredAccent(stored, extracted));
       })
       .catch(() => {
         // Leave the already-set fallback in place.
@@ -81,7 +105,7 @@ export default function AccentColorProvider({
     return () => {
       cancelled = true;
     };
-  }, [coverImage, fallbackAccent]);
+  }, [coverImage, stored]);
 
   return (
     <AccentColorContext.Provider value={accent}>

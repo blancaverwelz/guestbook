@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import Hero from "@/components/Hero/Hero";
 import CTASection from "@/components/CTASection/CTASection";
 import { getEventBySlug } from "@/lib/events";
+import { parseStoredAccent } from "@/lib/colorExtraction";
 
 interface EventLandingPageProps {
   params: Promise<{ slug: string }>;
@@ -72,7 +73,14 @@ export async function generateViewport({
   // elsewhere (the landing page's own on-screen accent can differ, since
   // that one is extracted client-side from the cover photo; browser chrome
   // color has to be decided server-side, so it uses the stored fallback).
-  const accent = event?.accent_color ?? "#b08d57";
+  //
+  // Chat 13 follow-up: `event.accent_color` may now be a `custom:#RRGGBB`
+  // string (see lib/colorExtraction.ts), which is not itself a valid CSS
+  // color — parseStoredAccent() strips the marker either way, so Custom
+  // mode's browser-chrome color matches the admin's chosen color exactly
+  // (no extraction needed to know it, since it's deterministic), and
+  // Automatic mode keeps using the configured fallback exactly as before.
+  const accent = parseStoredAccent(event?.accent_color ?? null).color;
 
   return {
     width: "device-width",

@@ -2,6 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { galleryStoragePathFromUrl } from "@/lib/galleryStoragePath";
+import { parseStoredAccent, serializeStoredAccent, type AccentMode } from "@/lib/colorExtraction";
+import CoverImageUploader from "./CoverImageUploader";
 import type { AdminEvent } from "./types";
 
 type SaveState = "IDLE" | "SAVING" | "SUCCESS" | "ERROR";
@@ -12,19 +15,38 @@ interface EventEditorProps {
 }
 
 /**
- * `accent_color` is labeled "Fallback accent color", not "Accent color" —
- * see shared reference doc's "Design system — Accent color". The landing
- * page (Chat 6) auto-extracts a color from `cover_image` client-side and
- * uses that instead whenever it clears WCAG AA contrast; this field only
- * ever renders when there's no cover image or extraction/contrast fails.
- * Labeling it plainly as "Accent color" would make a host who picks a
- * color and doesn't see it used reasonably think the picker is broken.
+ * `accent_color` (Chat 13 follow-up) is no longer fallback-only. Event
+ * Settings now exposes an explicit Automatic/Custom toggle:
+ *  - Automatic: unchanged Chat 6/7 behavior — the landing page extracts a
+ *    color from `cover_image` client-side and uses it whenever it clears
+ *    WCAG AA; the color picker here is just the ultimate fallback for when
+ *    there's no cover image or extraction/contrast fails.
+ *  - Custom: the color picked here is used on the landing page directly,
+ *    taking precedence over extraction (still contrast-checked — see
+ *    lib/colorExtraction.ts's `resolveStoredAccent`).
+ * Both states are encoded in the single `accent_color` text column (no new
+ * `accent_mode` column/migration) — see parseStoredAccent/
+ * serializeStoredAccent in lib/colorExtraction.ts for the encoding and why
+ * it's fully backward-compatible with every already-published event.
  *
- * Cover image is a pasted URL, not an upload widget — there's no
- * event-cover Storage bucket in this project (only "gallery", scoped to
- * guest uploads), and standing one up is exactly the kind of
- * storage-dashboard scope the chat 7 spec calls out as post-MVP. A URL
- * field with a live preview covers the stated requirement without it.
+ * Cover image is an upload widget (`CoverImageUploader`), not a pasted URL
+ * field. There's still no dedicated event-cover Storage bucket — a new
+ * upload uses the existing "gallery" bucket under a `covers/{eventId}/`
+ * path prefix rather than a separate bucket, so no migration or RLS change
+ * was needed (see CoverImageUploader/useCoverImageUpload doc comments).
+ * `CoverImageUploader` only stages the new public URL into `coverImage`
+ * state below; it is not written to `events.cover_image` until this form's
+ * normal Save, same as every other field here — so an upload failure never
+ * touches the row's currently-saved working cover image.
+ *
+ * If Save succeeds and the previous `event.cover_image` pointed at a
+ * Storage object under this bucket (i.e. it wasn't null and
+ * `galleryStoragePathFromUrl` can parse it), that now-orphaned object is
+ * deleted after the DB update succeeds — never before, and never on a
+ * failed save. An upload that's staged but abandoned without ever clicking
+ * Save is a rare, low-cost orphan (single admin-facing form, not
+ * guest-scale traffic) — accepted rather than adding extra cleanup
+ * machinery for it, same tradeoff already made for gallery upload orphans.
  *
  * Form state resets from `event` whenever the selected event changes
  * (AdminDashboard's event selector) or after a successful save — otherwise
@@ -35,7 +57,9 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
   const [title, setTitle] = useState(event.title);
   const [subtitle, setSubtitle] = useState(event.subtitle ?? "");
   const [coverImage, setCoverImage] = useState(event.cover_image ?? "");
-  const [accentColor, setAccentColor] = useState(event.accent_color ?? "#B08D57");
+  const initialAccent = parseStoredAccent(event.accent_color);
+  const [accentMode, setAccentMode] = useState<AccentMode>(initialAccent.mode);
+  const [accentColor, setAccentColor] = useState(initialAccent.color);
   const [galleryRequiresApproval, setGalleryRequiresApproval] = useState(
     event.gallery_requires_approval
   );
@@ -46,7 +70,9 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
     setTitle(event.title);
     setSubtitle(event.subtitle ?? "");
     setCoverImage(event.cover_image ?? "");
-    setAccentColor(event.accent_color ?? "#B08D57");
+    const parsedAccent = parseStoredAccent(event.accent_color);
+    setAccentMode(parsedAccent.mode);
+    setAccentColor(parsedAccent.color);
     setGalleryRequiresApproval(event.gallery_requires_approval);
     setSaveState("IDLE");
     setError(null);
@@ -66,7 +92,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         title,
         subtitle: subtitle.trim() === "" ? null : subtitle,
         cover_image: coverImage.trim() === "" ? null : coverImage,
-        accent_color: accentColor,
+        accent_color: serializeStoredAccent(accentMode, accentColor),
         gallery_requires_approval: galleryRequiresApproval,
       })
       .eq("id", event.id)
@@ -77,6 +103,24 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       setError("Couldn't save changes. Please try again.");
       setSaveState("ERROR");
       return;
+    }
+
+    // Clean up the replaced cover image only now that the DB update has
+    // succeeded — never before, and never on a failed save (see doc
+    // comment above). `event.cover_image` is the value that was current
+    // when this form last reset from props, i.e. the row's previous
+    // working image. A pasted-URL leftover from before this feature
+    // existed, or any URL outside this bucket, simply won't parse and is
+    // left alone rather than guessed at.
+    const previousCoverImage = event.cover_image;
+    if (previousCoverImage && previousCoverImage !== data.cover_image) {
+      const previousPath = galleryStoragePathFromUrl(previousCoverImage);
+      if (previousPath) {
+        const supabaseCleanup = createClient();
+        // Best-effort: a failure here leaves one orphaned Storage object,
+        // which does not affect the event's now-saved, working cover image.
+        void supabaseCleanup.storage.from("gallery").remove([previousPath]);
+      }
     }
 
     onUpdated(data);
@@ -120,40 +164,46 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="event-cover" className="text-sm font-medium text-foreground">
-          Cover image URL
-        </label>
-        <input
-          id="event-cover"
-          type="url"
-          value={coverImage}
-          onChange={(e) => setCoverImage(e.target.value)}
-          disabled={isSaving}
-          placeholder="https://..."
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-        />
-        {coverImage.trim() !== "" && (
-          // Free-text URL, not guaranteed to be a Supabase Storage host —
-          // plain <img>, not next/image, so an unlisted domain doesn't
-          // throw at runtime.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverImage}
-            alt=""
-            className="mt-1 h-24 w-full rounded-md border border-border object-cover"
-          />
-        )}
-      </div>
+      <CoverImageUploader
+        eventId={event.id}
+        currentImageUrl={coverImage.trim() === "" ? null : coverImage}
+        onUploaded={(url) => setCoverImage(url)}
+        disabled={isSaving}
+      />
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="event-accent" className="text-sm font-medium text-foreground">
-          Fallback accent color
-        </label>
+        <span className="text-sm font-medium text-foreground">Accent color</span>
         <p className="text-xs text-muted-foreground">
-          Only used when there&apos;s no cover photo, or the color auto-extracted from
-          the cover photo doesn&apos;t pass a contrast check.
+          Automatic pulls a color from the cover photo (falling back to the color below if
+          there&apos;s no photo, or the extracted color doesn&apos;t pass a contrast check).
+          Custom always uses the color you pick here instead.
         </p>
+
+        <div role="radiogroup" aria-label="Accent color mode" className="flex gap-4">
+          <label className="flex items-center gap-1.5 text-sm text-foreground">
+            <input
+              type="radio"
+              name="accent-mode"
+              checked={accentMode === "automatic"}
+              onChange={() => setAccentMode("automatic")}
+              disabled={isSaving}
+              className="accent-[var(--accent)] disabled:cursor-not-allowed"
+            />
+            Automatic
+          </label>
+          <label className="flex items-center gap-1.5 text-sm text-foreground">
+            <input
+              type="radio"
+              name="accent-mode"
+              checked={accentMode === "custom"}
+              onChange={() => setAccentMode("custom")}
+              disabled={isSaving}
+              className="accent-[var(--accent)] disabled:cursor-not-allowed"
+            />
+            Custom
+          </label>
+        </div>
+
         <div className="flex items-center gap-2">
           <input
             id="event-accent"
@@ -171,6 +221,12 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             className="w-32 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
+        {accentMode === "automatic" && (
+          <p className="text-xs text-muted-foreground">
+            This color is only used as the fallback described above — it won&apos;t override a
+            successfully extracted cover-photo color. Switch to Custom to force it.
+          </p>
+        )}
       </div>
 
       <label className="flex items-center gap-2.5">

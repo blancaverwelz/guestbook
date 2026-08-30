@@ -24,8 +24,63 @@ export interface ResolvedAccent {
   isExtracted: boolean;
 }
 
+/** Admin-facing accent mode, added in the Chat 13 follow-up. */
+export type AccentMode = "automatic" | "custom";
+
+export interface StoredAccent {
+  mode: AccentMode;
+  /**
+   * In "automatic" mode: the configured fallback hex, used only when
+   * extraction is unavailable/fails/fails contrast (unchanged Chat 6/7
+   * behavior). In "custom" mode: the admin's deliberately chosen override
+   * hex, used in place of extraction entirely.
+   */
+  color: string;
+}
+
 const WHITE = "#ffffff";
 const NEAR_BLACK = "#1a1a1a"; // matches --foreground in light mode, see globals.css
+
+/**
+ * Default champagne-gold fallback — matches the `events.accent_color`
+ * column default from migration 0001. Used both as the automatic-mode
+ * fallback color when `accent_color` is null/empty, and as the hard safety
+ * net if a Custom color itself fails the WCAG AA check (see
+ * `resolveStoredAccent` below) — this specific hex is relied on elsewhere
+ * (the DB default, generateViewport's server-side theme-color fallback) as
+ * "expected to always pass," so it's kept as a named constant rather than
+ * re-typed in multiple places.
+ */
+const DEFAULT_FALLBACK_COLOR = "#B08D57";
+
+const CUSTOM_PREFIX = "custom:";
+
+/**
+ * `events.accent_color` (Chat 13 follow-up) — kept as a single text column
+ * rather than adding a new `accent_mode` column/migration, per this
+ * follow-up's guardrail to prefer the existing field. A bare hex string
+ * (or null) means Automatic — this is exactly what every event's
+ * `accent_color` already contains today (the Chat 1 seed/default), so
+ * every already-published event keeps behaving identically post-deploy:
+ * extraction still runs, this value is still only the ultimate fallback.
+ * A `custom:#RRGGBB`-prefixed string is a new, unambiguous marker written
+ * only when an admin explicitly picks Custom in Event Settings — it can
+ * never collide with a legacy value, since no prior code ever wrote
+ * anything but a bare hex to this column.
+ */
+export function parseStoredAccent(raw: string | null): StoredAccent {
+  if (!raw) return { mode: "automatic", color: DEFAULT_FALLBACK_COLOR };
+  if (raw.startsWith(CUSTOM_PREFIX)) {
+    const color = raw.slice(CUSTOM_PREFIX.length);
+    return { mode: "custom", color: color || DEFAULT_FALLBACK_COLOR };
+  }
+  return { mode: "automatic", color: raw };
+}
+
+/** Inverse of parseStoredAccent — what EventEditor writes back to `events.accent_color`. */
+export function serializeStoredAccent(mode: AccentMode, color: string): string {
+  return mode === "custom" ? `${CUSTOM_PREFIX}${color}` : color;
+}
 
 // ---------------------------------------------------------------------------
 // Color math (pure)
@@ -99,6 +154,36 @@ export function resolveAccentColor(extracted: string | null, fallback: string): 
   }
   const fallbackText = pickReadableTextColor(fallback);
   return { color: fallback, textColor: fallbackText, isExtracted: false };
+}
+
+/**
+ * Mode-aware entry point (Chat 13 follow-up), used by AccentColorProvider
+ * in place of calling `resolveAccentColor` directly.
+ *
+ * - Automatic: unchanged existing policy — try the extracted color, fall
+ *   back to `stored.color` (the configured fallback) if extraction is
+ *   absent or fails contrast. `extracted` is ignored entirely in Custom
+ *   mode; AccentColorProvider skips calling `extractDominantColor` in that
+ *   case so this is really "never even attempted," not just "discarded."
+ * - Custom: try the admin's chosen color first. If it fails WCAG AA (e.g.
+ *   a light color with white-or-black text both under 4.5:1 — rare but
+ *   possible for some mid-tone colors), fail safe to the same hard-coded
+ *   champagne default used elsewhere, rather than forcing an unreadable
+ *   custom color onto every guest's screen. Never silently reinterprets or
+ *   adjusts the admin's chosen color (e.g. auto-darkening it) — that would
+ *   surprise an admin who explicitly picked a value expecting to see it
+ *   used as-is.
+ */
+export function resolveStoredAccent(stored: StoredAccent, extracted: string | null): ResolvedAccent {
+  if (stored.mode === "custom") {
+    const textColor = pickReadableTextColor(stored.color);
+    if (contrastRatio(stored.color, textColor) >= WCAG_AA_NORMAL_TEXT) {
+      return { color: stored.color, textColor, isExtracted: false };
+    }
+    const fallbackText = pickReadableTextColor(DEFAULT_FALLBACK_COLOR);
+    return { color: DEFAULT_FALLBACK_COLOR, textColor: fallbackText, isExtracted: false };
+  }
+  return resolveAccentColor(extracted, stored.color);
 }
 
 // ---------------------------------------------------------------------------

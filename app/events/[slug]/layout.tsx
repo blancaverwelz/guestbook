@@ -27,6 +27,13 @@ import { getEventBySlug } from "@/lib/events";
  * and it needs to be inside <AccentColorProvider> to read the resolved
  * accent via useAccentColor() for its active-link color.
  *
+ * Chat 13 follow-up — passes the raw `event.accent_color` straight through
+ * as `storedAccentColor` instead of pre-resolving a `fallbackAccent`
+ * string here. AccentColorProvider now owns parsing it (bare hex =
+ * Automatic, `custom:#RRGGBB` = Custom) via `parseStoredAccent` — see that
+ * file's doc comment for why this is a single-column encoding rather than
+ * a new `accent_mode` DB column/migration.
+ *
  * This also centralizes the published/not-found gate for the whole
  * subtree — each page.tsx still has its own defensive `if (!event)
  * notFound()` check (harmless, since getEventBySlug is cache()-deduped —
@@ -49,10 +56,7 @@ export default async function EventLayout({
   }
 
   return (
-    <AccentColorProvider
-      coverImage={event.cover_image}
-      fallbackAccent={event.accent_color ?? "#B08D57"}
-    >
+    <AccentColorProvider coverImage={event.cover_image} storedAccentColor={event.accent_color}>
       <Navbar slug={slug} eventTitle={event.title} />
       {children}
     </AccentColorProvider>
