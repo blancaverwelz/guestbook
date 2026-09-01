@@ -4,7 +4,15 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { galleryStoragePathFromUrl } from "@/lib/galleryStoragePath";
 import { parseStoredAccent, serializeStoredAccent, type AccentMode } from "@/lib/colorExtraction";
+import {
+  HERO_DECORATIONS,
+  parseStoredHeroSettings,
+  serializeHeroSettings,
+  type HeroSettings,
+  type HeroDecoration,
+} from "@/lib/heroSettings";
 import CoverImageUploader from "./CoverImageUploader";
+import HeroFieldEditor from "./HeroFieldEditor";
 import type { AdminEvent } from "./types";
 
 type SaveState = "IDLE" | "SAVING" | "SUCCESS" | "ERROR";
@@ -56,6 +64,7 @@ interface EventEditorProps {
 export default function EventEditor({ event, onUpdated }: EventEditorProps) {
   const [title, setTitle] = useState(event.title);
   const [subtitle, setSubtitle] = useState(event.subtitle ?? "");
+  const [eventDate, setEventDate] = useState(event.event_date ?? "");
   const [coverImage, setCoverImage] = useState(event.cover_image ?? "");
   const initialAccent = parseStoredAccent(event.accent_color);
   const [accentMode, setAccentMode] = useState<AccentMode>(initialAccent.mode);
@@ -63,17 +72,22 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
   const [galleryRequiresApproval, setGalleryRequiresApproval] = useState(
     event.gallery_requires_approval
   );
+  const [heroSettings, setHeroSettings] = useState<HeroSettings>(
+    parseStoredHeroSettings(event.hero_settings)
+  );
   const [saveState, setSaveState] = useState<SaveState>("IDLE");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTitle(event.title);
     setSubtitle(event.subtitle ?? "");
+    setEventDate(event.event_date ?? "");
     setCoverImage(event.cover_image ?? "");
     const parsedAccent = parseStoredAccent(event.accent_color);
     setAccentMode(parsedAccent.mode);
     setAccentColor(parsedAccent.color);
     setGalleryRequiresApproval(event.gallery_requires_approval);
+    setHeroSettings(parseStoredHeroSettings(event.hero_settings));
     setSaveState("IDLE");
     setError(null);
   }, [event]);
@@ -91,12 +105,16 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       .update({
         title,
         subtitle: subtitle.trim() === "" ? null : subtitle,
+        event_date: eventDate.trim() === "" ? null : eventDate,
         cover_image: coverImage.trim() === "" ? null : coverImage,
         accent_color: serializeStoredAccent(accentMode, accentColor),
         gallery_requires_approval: galleryRequiresApproval,
+        hero_settings: serializeHeroSettings(heroSettings),
       })
       .eq("id", event.id)
-      .select("id, slug, title, subtitle, cover_image, accent_color, gallery_requires_approval")
+      .select(
+        "id, slug, title, subtitle, event_date, cover_image, accent_color, gallery_requires_approval, hero_settings"
+      )
       .single();
 
     if (updateError || !data) {
@@ -135,33 +153,131 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6"
       noValidate
     >
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="event-title" className="text-sm font-medium text-foreground">
-          Title
-        </label>
-        <input
-          id="event-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={isSaving}
-          required
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-        />
-      </div>
+      <HeroFieldEditor
+        label="Event title"
+        idPrefix="hero-title"
+        settings={heroSettings.title}
+        onChange={(next) => setHeroSettings((prev) => ({ ...prev, title: next }))}
+        disabled={isSaving}
+      >
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="event-title" className="text-sm font-medium text-foreground">
+            Title
+          </label>
+          <input
+            id="event-title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={isSaving}
+            required
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+      </HeroFieldEditor>
+
+      <HeroFieldEditor
+        label="Event subtitle"
+        idPrefix="hero-subtitle"
+        settings={heroSettings.subtitle}
+        onChange={(next) => setHeroSettings((prev) => ({ ...prev, subtitle: next }))}
+        disabled={isSaving}
+      >
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="event-subtitle" className="text-sm font-medium text-foreground">
+            Subtitle
+          </label>
+          <input
+            id="event-subtitle"
+            type="text"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            disabled={isSaving}
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+      </HeroFieldEditor>
+
+      <HeroFieldEditor
+        label="Event date"
+        idPrefix="hero-date"
+        settings={heroSettings.date}
+        onChange={(next) => setHeroSettings((prev) => ({ ...prev, date: next }))}
+        disabled={isSaving}
+      >
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="event-date" className="text-sm font-medium text-foreground">
+            Date
+          </label>
+          <input
+            id="event-date"
+            type="date"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+            disabled={isSaving}
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+      </HeroFieldEditor>
+
+      <HeroFieldEditor
+        label="Hero guestbook text"
+        idPrefix="hero-guestbook-text"
+        settings={heroSettings.guestbookText}
+        onChange={(next) =>
+          setHeroSettings((prev) => ({
+            ...prev,
+            guestbookText: { ...prev.guestbookText, ...next },
+          }))
+        }
+        disabled={isSaving}
+      >
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="hero-guestbook-text-content" className="text-sm font-medium text-foreground">
+            Text
+          </label>
+          <input
+            id="hero-guestbook-text-content"
+            type="text"
+            value={heroSettings.guestbookText.content}
+            onChange={(e) =>
+              setHeroSettings((prev) => ({
+                ...prev,
+                guestbookText: { ...prev.guestbookText, content: e.target.value },
+              }))
+            }
+            disabled={isSaving}
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          />
+        </div>
+      </HeroFieldEditor>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="event-subtitle" className="text-sm font-medium text-foreground">
-          Subtitle
+        <label htmlFor="hero-decoration" className="text-sm font-medium text-foreground">
+          Hero decoration
         </label>
-        <input
-          id="event-subtitle"
-          type="text"
-          value={subtitle}
-          onChange={(e) => setSubtitle(e.target.value)}
+        <p className="text-xs text-muted-foreground">
+          Floral flourishes frame the guestbook text line above the CTAs. Only shown when that
+          text is also set to show.
+        </p>
+        <select
+          id="hero-decoration"
+          value={heroSettings.decoration}
+          onChange={(e) =>
+            setHeroSettings((prev) => ({
+              ...prev,
+              decoration: e.target.value as HeroDecoration,
+            }))
+          }
           disabled={isSaving}
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-        />
+          className="w-40 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {HERO_DECORATIONS.map((option) => (
+            <option key={option} value={option}>
+              {option === "floral" ? "Floral" : "None"}
+            </option>
+          ))}
+        </select>
       </div>
 
       <CoverImageUploader

@@ -33,7 +33,7 @@ export default async function AdminPage() {
   const { data: events } = await supabase
     .from("events")
     .select(
-      "id, slug, title, subtitle, cover_image, accent_color, gallery_requires_approval"
+      "id, slug, title, subtitle, event_date, cover_image, accent_color, gallery_requires_approval, hero_settings"
     )
     .order("created_at", { ascending: false })
     .returns<AdminEvent[]>();

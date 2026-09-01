@@ -36,7 +36,7 @@ export const getEventBySlug = cache(async function getEventBySlug(
 
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, subtitle, event_date, cover_image, accent_color")
+    .select("id, title, subtitle, event_date, cover_image, accent_color, hero_settings")
     .eq("slug", slug)
     .eq("published", true)
     .single();

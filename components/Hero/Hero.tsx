@@ -2,28 +2,34 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Dancing_Script, Cormorant_Garamond } from "next/font/google";
 import FloralEngrave from "./FloralEngrave";
 import { useAccentColor } from "./AccentColorProvider";
+import { parseStoredHeroSettings } from "@/lib/heroSettings";
+import { HERO_FONT_CLASS_NAMES } from "@/lib/heroFonts";
 import type { LandingEvent } from "@/types/event";
 
-// Calligraphy face for the "Sign Our Guestbook" signature line — a real
-// web font renders cursive letterforms correctly every time, unlike
-// LLM-authored SVG bezier paths for script text (see design brief).
-const scriptFont = Dancing_Script({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-});
+/**
+ * Chat 14: title/subtitle/date/guestbook-text font families and sizes are
+ * now admin-configurable per event (see EventEditor), so the two
+ * hardcoded next/font/google instances that used to live here
+ * (Cormorant Garamond for title/subtitle/date, Dancing Script for the
+ * guestbook-text line) have moved into lib/heroFonts.ts, which declares
+ * all 8 curated fonts up front and exposes a name -> className lookup —
+ * see that file's doc comment for why a single dynamic font call isn't
+ * possible with next/font.
+ */
 
-// Elegant serif for the event's own title/subtitle/date — an invitation
-// register, distinct from the body sans used on the rest of the site.
-const titleFont = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
+/**
+ * Renders an admin-selected font size as a fluid value rather than a flat
+ * px — a 64px title selection would overflow a narrow phone if applied
+ * as-is with no responsive variants. Scales between 60% and 100% of the
+ * chosen size across viewport width instead of needing separate
+ * mobile/desktop settings.
+ */
+function heroFontSizeStyle(size: number): React.CSSProperties {
+  const min = Math.round(size * 0.6);
+  return { fontSize: `clamp(${min}px, ${min}px + 3vw, ${size}px)` };
+}
 
 function formatEventDate(isoDate: string | null): string | null {
   if (!isoDate) return null;
@@ -47,6 +53,7 @@ interface HeroProps {
 export default function Hero({ event }: HeroProps) {
   const accent = useAccentColor();
   const formattedDate = formatEventDate(event.event_date);
+  const heroSettings = parseStoredHeroSettings(event.hero_settings);
 
   return (
     <section className="relative flex min-h-[42vh] w-full items-end overflow-hidden sm:min-h-[52vh] md:min-h-[70vh]">
@@ -118,18 +125,27 @@ export default function Hero({ event }: HeroProps) {
             visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
           }}
         >
-          <h1
-            className={`${titleFont.className} text-4xl font-semibold tracking-wide md:text-6xl`}
-          >
-            {event.title}
-          </h1>
-          {event.subtitle && (
-            <p className={`${titleFont.className} mt-1 text-lg italic text-muted-foreground md:text-xl`}>
+          {heroSettings.title.visible && (
+            <h1
+              className={`${HERO_FONT_CLASS_NAMES[heroSettings.title.fontFamily]} font-semibold tracking-wide`}
+              style={heroFontSizeStyle(heroSettings.title.fontSize)}
+            >
+              {event.title}
+            </h1>
+          )}
+          {heroSettings.subtitle.visible && event.subtitle && (
+            <p
+              className={`${HERO_FONT_CLASS_NAMES[heroSettings.subtitle.fontFamily]} mt-1 italic text-muted-foreground`}
+              style={heroFontSizeStyle(heroSettings.subtitle.fontSize)}
+            >
               {event.subtitle}
             </p>
           )}
-          {formattedDate && (
-            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground md:text-sm">
+          {heroSettings.date.visible && formattedDate && (
+            <p
+              className={`${HERO_FONT_CLASS_NAMES[heroSettings.date.fontFamily]} mt-2 uppercase tracking-[0.2em] text-muted-foreground`}
+              style={heroFontSizeStyle(heroSettings.date.fontSize)}
+            >
               {formattedDate}
             </p>
           )}
@@ -138,20 +154,37 @@ export default function Hero({ event }: HeroProps) {
         {/* Signature moment: floral engrave framing the calligraphy CTA
             line. This is the one deliberately ornamented element on the
             page — everything else stays quiet by design. Flex + gap (not
-            negative margins) keeps this stable across viewport widths. */}
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 22 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-          }}
-          className="mt-2 flex w-full max-w-md flex-col items-center gap-1"
-        >
-          <FloralEngrave className="h-10 w-full text-foreground/70 md:h-14" />
-          <p className={`${scriptFont.className} px-2 text-3xl leading-tight text-foreground md:text-5xl`}>
-            Sign Our Guestbook
-          </p>
-          <FloralEngrave className="h-10 w-full rotate-180 text-foreground/70 md:h-14" />
-        </motion.div>
+            negative margins) keeps this stable across viewport widths.
+
+            Chat 14: content, font, size are admin-configurable
+            (heroSettings.guestbookText); the whole row (flourishes +
+            text) is omitted entirely when that field is hidden, so
+            turning it off never leaves the two FloralEngrave flourishes
+            floating around empty space. When shown, decoration ("floral"
+            vs "none") independently controls whether the flourishes
+            themselves render around it. */}
+        {heroSettings.guestbookText.visible && (
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 22 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+            }}
+            className="mt-2 flex w-full max-w-md flex-col items-center gap-1"
+          >
+            {heroSettings.decoration === "floral" && (
+              <FloralEngrave className="h-10 w-full text-foreground/70 md:h-14" />
+            )}
+            <p
+              className={`${HERO_FONT_CLASS_NAMES[heroSettings.guestbookText.fontFamily]} px-2 leading-tight text-foreground`}
+              style={heroFontSizeStyle(heroSettings.guestbookText.fontSize)}
+            >
+              {heroSettings.guestbookText.content}
+            </p>
+            {heroSettings.decoration === "floral" && (
+              <FloralEngrave className="h-10 w-full rotate-180 text-foreground/70 md:h-14" />
+            )}
+          </motion.div>
+        )}
       </motion.div>
     </section>
   );
