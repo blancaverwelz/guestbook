@@ -196,9 +196,9 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
               />
             </div>
 
-            <div className="flex items-center justify-between gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1.5">
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                   item.status === "approved"
                     ? "bg-accent/20 text-accent"
                     : item.status === "pending"
@@ -208,14 +208,14 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
               >
                 {item.status}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center justify-end gap-1">
                 {item.status === "pending" && (
                   <button
                     type="button"
                     onClick={() => void handleApprove(item)}
                     disabled={busy}
                     aria-label="Approve photo"
-                    className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex shrink-0 items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check size={12} />
                     {approving ? "..." : "Approve"}
@@ -226,7 +226,7 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
                   onClick={() => void handleDelete(item)}
                   disabled={busy}
                   aria-label="Delete photo"
-                  className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 size={12} />
                   {deleting ? "..." : "Delete"}
