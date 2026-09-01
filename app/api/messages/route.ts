@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
   );
 
   if (rateLimitError) {
+    console.error("Message rate-limit RPC failed:", rateLimitError);
     return NextResponse.json(
       { error: "Something went wrong sending your message. Please try again." },
       { status: 500 }
@@ -144,6 +145,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (insertError) {
+    console.error("Message insert failed:", insertError);
     return NextResponse.json(
       { error: "Something went wrong sending your message. Please try again." },
       { status: 500 }
