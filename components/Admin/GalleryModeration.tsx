@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { galleryStoragePathFromUrl } from "@/lib/galleryStoragePath";
 
@@ -15,14 +15,15 @@ type GalleryItem = {
   created_at: string;
 };
 
-type RowState = "IDLE" | "DELETING" | "ERROR";
+type RowState = "IDLE" | "APPROVING" | "DELETING" | "ERROR";
 
 /**
- * Delete-only, per the chat 7 spec ("gallery (delete)" — approve/reject is
- * scoped to messages only, not gallery). Shows every photo for the event
- * regardless of status, since the failure mode that matters here is "an
- * inappropriate photo stays live and visible to all guests" — an admin
- * needs to be able to pull *any* photo, not just ones still pending.
+ * Shows every photo for the event regardless of status, since the failure
+ * mode that matters here is "an inappropriate photo stays live and visible
+ * to all guests" — an admin needs to be able to pull *any* photo, not just
+ * ones still pending. Delete works on any status; Approve only appears on
+ * pending items (added in the Chat 13 gallery-approval revision — prior to
+ * that this panel was delete-only, per the chat 7 spec).
  *
  * Storage delete before DB delete, deliberately: if the DB delete then
  * fails, the row is still there for retry and `storage.remove()` on an
@@ -35,6 +36,13 @@ type RowState = "IDLE" | "DELETING" | "ERROR";
  * the storage call and surfaces an error rather than silently deleting
  * only the DB row — a photo disappearing from the admin list while still
  * being reachable by direct URL would defeat the point of this panel.
+ *
+ * Approve (pending -> approved) reuses the same authenticated update this
+ * panel already relies on for delete, under the existing "admin full
+ * access gallery" RLS policy — no new grant needed. Unlike
+ * MessageModeration's approve/reject, this panel shows every photo
+ * regardless of status (see above), so approving updates the row in place
+ * rather than removing it from the list.
  */
 export default function GalleryModeration({ eventId }: { eventId: string }) {
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -67,6 +75,34 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
   useEffect(() => {
     void fetchItems();
   }, [fetchItems]);
+
+  async function handleApprove(item: GalleryItem) {
+    if (inFlightRef.current.has(item.id)) return;
+    inFlightRef.current.add(item.id);
+    setRowStates((prev) => ({ ...prev, [item.id]: "APPROVING" }));
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("gallery")
+      .update({ status: "approved" })
+      .eq("id", item.id);
+
+    inFlightRef.current.delete(item.id);
+
+    if (error) {
+      setRowStates((prev) => ({ ...prev, [item.id]: "ERROR" }));
+      return;
+    }
+
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, status: "approved" } : i)),
+    );
+    setRowStates((prev) => {
+      const next = { ...prev };
+      delete next[item.id];
+      return next;
+    });
+  }
 
   async function handleDelete(item: GalleryItem) {
     if (inFlightRef.current.has(item.id)) return;
@@ -141,7 +177,9 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       {items.map((item) => {
         const rowState = rowStates[item.id] ?? "IDLE";
+        const approving = rowState === "APPROVING";
         const deleting = rowState === "DELETING";
+        const busy = approving || deleting;
 
         return (
           <div
@@ -170,21 +208,35 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
               >
                 {item.status}
               </span>
-              <button
-                type="button"
-                onClick={() => void handleDelete(item)}
-                disabled={deleting}
-                aria-label="Delete photo"
-                className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Trash2 size={12} />
-                {deleting ? "..." : "Delete"}
-              </button>
+              <div className="flex items-center gap-1">
+                {item.status === "pending" && (
+                  <button
+                    type="button"
+                    onClick={() => void handleApprove(item)}
+                    disabled={busy}
+                    aria-label="Approve photo"
+                    className="flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Check size={12} />
+                    {approving ? "..." : "Approve"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void handleDelete(item)}
+                  disabled={busy}
+                  aria-label="Delete photo"
+                  className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={12} />
+                  {deleting ? "..." : "Delete"}
+                </button>
+              </div>
             </div>
 
             {rowState === "ERROR" && (
               <p role="alert" className="text-xs text-red-600 dark:text-red-400">
-                Delete failed. Try again.
+                Action failed. Try again.
               </p>
             )}
           </div>
