@@ -4,7 +4,6 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-background text-foreground">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-6 py-8 text-center text-sm">
-        <Logo size={22} className="text-[var(--accent)]" />
         <p>© 2026 Guestbook. All rights reserved.</p>
         <p>
           Designed & Developed by{" "}
