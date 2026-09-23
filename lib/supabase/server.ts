@@ -17,10 +17,16 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        setAll(
+          cookiesToSet: {
+            name: string;
+            value: string;
+            options: CookieOptions;
+          }[],
+        ) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options),
             );
           } catch {
             // setAll called from a Server Component without a surrounding
@@ -29,7 +35,7 @@ export async function createClient() {
           }
         },
       },
-    }
+    },
   );
 }
 
@@ -40,10 +46,13 @@ export async function createClient() {
  * expose SUPABASE_SERVICE_ROLE_KEY to the browser.
  */
 export function createServiceRoleClient() {
-  const { createClient: createSupabaseClient } = require("@supabase/supabase-js");
+  const {
+    createClient: createSupabaseClient,
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+  } = require("@supabase/supabase-js");
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false } },
   );
 }
