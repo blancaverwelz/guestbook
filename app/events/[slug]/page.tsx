@@ -90,7 +90,9 @@ export async function generateViewport({
   };
 }
 
-export default async function EventLandingPage({ params }: EventLandingPageProps) {
+export default async function EventLandingPage({
+  params,
+}: EventLandingPageProps) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
 
@@ -120,7 +122,10 @@ export default async function EventLandingPage({ params }: EventLandingPageProps
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-title" content={event.title} />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+      />
       <link
         rel="apple-touch-startup-image"
         href="/splash/splash-1170x2532.png"
@@ -137,7 +142,7 @@ export default async function EventLandingPage({ params }: EventLandingPageProps
         media="(device-width: 810px) and (device-height: 1080px)"
       />
 
-      <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <main className="flex min-h-[100dvh] flex-col bg-background text-foreground">
         <Hero event={event} />
         <CTASection slug={slug} />
       </main>

@@ -56,7 +56,7 @@ export default function Hero({ event }: HeroProps) {
   const heroSettings = parseStoredHeroSettings(event.hero_settings);
 
   return (
-    <section className="relative flex min-h-[42vh] w-full items-end overflow-hidden sm:min-h-[52vh] md:min-h-[70vh]">
+    <section className="relative flex min-h-[42vh] w-full flex-1 items-end overflow-hidden sm:min-h-[52vh] md:min-h-[70vh]">
       {/* Background: cover photo if the host set one, otherwise a soft
           gradient built from this event's own accent color so the hero
           never looks broken/blank for an event without a photo yet.
@@ -122,7 +122,11 @@ export default function Hero({ event }: HeroProps) {
             // larger vertical travel, not a different animation style —
             // still a plain fade/rise, still restrained.
             hidden: { opacity: 0, y: 22 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0.3, ease: "easeOut" },
+            },
           }}
         >
           {heroSettings.title.visible && (
@@ -167,7 +171,11 @@ export default function Hero({ event }: HeroProps) {
           <motion.div
             variants={{
               hidden: { opacity: 0, y: 22 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.3, ease: "easeOut" },
+              },
             }}
             className="mt-2 flex w-full max-w-md flex-col items-center gap-1"
           >
