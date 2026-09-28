@@ -46,12 +46,16 @@ export interface HeroFieldSettings {
   fontSize: HeroFontSize;
 }
 
+export interface HeroTitleSettings extends HeroFieldSettings {
+  content: string | null;
+}
+
 export interface HeroGuestbookTextSettings extends HeroFieldSettings {
   content: string;
 }
 
 export interface HeroSettings {
-  title: HeroFieldSettings;
+  title: HeroTitleSettings;
   subtitle: HeroFieldSettings;
   date: HeroFieldSettings;
   guestbookText: HeroGuestbookTextSettings;
@@ -76,7 +80,12 @@ export interface HeroSettings {
  * the FloralEngrave flourishes unconditionally before this chat.
  */
 export const DEFAULT_HERO_SETTINGS: HeroSettings = {
-  title: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 48 },
+  title: {
+    visible: true,
+    fontFamily: "Cormorant Garamond",
+    fontSize: 48,
+    content: null,
+  },
   subtitle: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 20 },
   date: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 16 },
   guestbookText: {
@@ -89,23 +98,37 @@ export const DEFAULT_HERO_SETTINGS: HeroSettings = {
 };
 
 function isHeroFontFamily(value: unknown): value is HeroFontFamily {
-  return typeof value === "string" && (HERO_FONT_FAMILIES as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (HERO_FONT_FAMILIES as readonly string[]).includes(value)
+  );
 }
 
 function isHeroFontSize(value: unknown): value is HeroFontSize {
-  return typeof value === "number" && (HERO_FONT_SIZES as readonly number[]).includes(value);
+  return (
+    typeof value === "number" &&
+    (HERO_FONT_SIZES as readonly number[]).includes(value)
+  );
 }
 
 function isHeroDecoration(value: unknown): value is HeroDecoration {
-  return typeof value === "string" && (HERO_DECORATIONS as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (HERO_DECORATIONS as readonly string[]).includes(value)
+  );
 }
 
-function parseFieldSettings(raw: unknown, fallback: HeroFieldSettings): HeroFieldSettings {
+function parseFieldSettings(
+  raw: unknown,
+  fallback: HeroFieldSettings,
+): HeroFieldSettings {
   if (typeof raw !== "object" || raw === null) return fallback;
   const r = raw as Record<string, unknown>;
   return {
     visible: typeof r.visible === "boolean" ? r.visible : fallback.visible,
-    fontFamily: isHeroFontFamily(r.fontFamily) ? r.fontFamily : fallback.fontFamily,
+    fontFamily: isHeroFontFamily(r.fontFamily)
+      ? r.fontFamily
+      : fallback.fontFamily,
     fontSize: isHeroFontSize(r.fontSize) ? r.fontSize : fallback.fontSize,
   };
 }
@@ -115,23 +138,37 @@ export function parseStoredHeroSettings(raw: unknown): HeroSettings {
   if (typeof raw !== "object" || raw === null) return DEFAULT_HERO_SETTINGS;
   const r = raw as Record<string, unknown>;
 
+  const titleRaw =
+    typeof r.title === "object" && r.title !== null
+      ? (r.title as Record<string, unknown>)
+      : {};
+
   const guestbookRaw =
     typeof r.guestbookText === "object" && r.guestbookText !== null
       ? (r.guestbookText as Record<string, unknown>)
       : {};
 
   return {
-    title: parseFieldSettings(r.title, DEFAULT_HERO_SETTINGS.title),
+    title: {
+      ...parseFieldSettings(titleRaw, DEFAULT_HERO_SETTINGS.title),
+      content:
+        typeof titleRaw.content === "string" && titleRaw.content.trim() !== ""
+          ? titleRaw.content
+          : null,
+    },
     subtitle: parseFieldSettings(r.subtitle, DEFAULT_HERO_SETTINGS.subtitle),
     date: parseFieldSettings(r.date, DEFAULT_HERO_SETTINGS.date),
     guestbookText: {
       ...parseFieldSettings(guestbookRaw, DEFAULT_HERO_SETTINGS.guestbookText),
       content:
-        typeof guestbookRaw.content === "string" && guestbookRaw.content.trim() !== ""
+        typeof guestbookRaw.content === "string" &&
+        guestbookRaw.content.trim() !== ""
           ? guestbookRaw.content
           : DEFAULT_HERO_SETTINGS.guestbookText.content,
     },
-    decoration: isHeroDecoration(r.decoration) ? r.decoration : DEFAULT_HERO_SETTINGS.decoration,
+    decoration: isHeroDecoration(r.decoration)
+      ? r.decoration
+      : DEFAULT_HERO_SETTINGS.decoration,
   };
 }
 
@@ -145,6 +182,13 @@ export function parseStoredHeroSettings(raw: unknown): HeroSettings {
 export function serializeHeroSettings(settings: HeroSettings): HeroSettings {
   return {
     ...settings,
+    title: {
+      ...settings.title,
+      content:
+        settings.title.content === null || settings.title.content.trim() === ""
+          ? null
+          : settings.title.content,
+    },
     guestbookText: {
       ...settings.guestbookText,
       content:

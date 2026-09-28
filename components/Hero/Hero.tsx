@@ -54,6 +54,7 @@ export default function Hero({ event }: HeroProps) {
   const accent = useAccentColor();
   const formattedDate = formatEventDate(event.event_date);
   const heroSettings = parseStoredHeroSettings(event.hero_settings);
+  const heroTitle = heroSettings.title.content ?? event.title;
 
   return (
     <section className="relative flex min-h-[42vh] w-full flex-1 items-end overflow-hidden sm:min-h-[52vh] md:min-h-[70vh]">
@@ -131,10 +132,10 @@ export default function Hero({ event }: HeroProps) {
         >
           {heroSettings.title.visible && (
             <h1
-              className={`${HERO_FONT_CLASS_NAMES[heroSettings.title.fontFamily]} font-semibold tracking-wide`}
+              className={`${HERO_FONT_CLASS_NAMES[heroSettings.title.fontFamily]} whitespace-pre-line font-semibold tracking-wide`}
               style={heroFontSizeStyle(heroSettings.title.fontSize)}
             >
-              {event.title}
+              {heroTitle}
             </h1>
           )}
           {heroSettings.subtitle.visible && event.subtitle && (

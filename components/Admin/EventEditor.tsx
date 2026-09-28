@@ -3,7 +3,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { galleryStoragePathFromUrl } from "@/lib/galleryStoragePath";
-import { parseStoredAccent, serializeStoredAccent, type AccentMode } from "@/lib/colorExtraction";
+import {
+  parseStoredAccent,
+  serializeStoredAccent,
+  type AccentMode,
+} from "@/lib/colorExtraction";
 import {
   HERO_DECORATIONS,
   parseStoredHeroSettings,
@@ -70,10 +74,10 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
   const [accentMode, setAccentMode] = useState<AccentMode>(initialAccent.mode);
   const [accentColor, setAccentColor] = useState(initialAccent.color);
   const [galleryRequiresApproval, setGalleryRequiresApproval] = useState(
-    event.gallery_requires_approval
+    event.gallery_requires_approval,
   );
   const [heroSettings, setHeroSettings] = useState<HeroSettings>(
-    parseStoredHeroSettings(event.hero_settings)
+    parseStoredHeroSettings(event.hero_settings),
   );
   const [saveState, setSaveState] = useState<SaveState>("IDLE");
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +117,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       })
       .eq("id", event.id)
       .select(
-        "id, slug, title, subtitle, event_date, cover_image, accent_color, gallery_requires_approval, hero_settings"
+        "id, slug, title, subtitle, event_date, cover_image, accent_color, gallery_requires_approval, hero_settings",
       )
       .single();
 
@@ -157,22 +161,62 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         label="Event title"
         idPrefix="hero-title"
         settings={heroSettings.title}
-        onChange={(next) => setHeroSettings((prev) => ({ ...prev, title: next }))}
+        onChange={(next) =>
+          setHeroSettings((prev) => ({
+            ...prev,
+            title: { ...prev.title, ...next },
+          }))
+        }
         disabled={isSaving}
       >
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="event-title" className="text-sm font-medium text-foreground">
-            Title
-          </label>
-          <input
-            id="event-title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isSaving}
-            required
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-          />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="event-title"
+              className="text-sm font-medium text-foreground"
+            >
+              Title
+            </label>
+            <input
+              id="event-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isSaving}
+              required
+              className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="hero-title-content"
+              className="text-sm font-medium text-foreground"
+            >
+              Hero title layout
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Optional. Press Enter to control where the title breaks. Leave
+              blank to use the event title automatically.
+            </p>
+            <textarea
+              id="hero-title-content"
+              value={heroSettings.title.content ?? ""}
+              onChange={(e) =>
+                setHeroSettings((prev) => ({
+                  ...prev,
+                  title: {
+                    ...prev.title,
+                    content: e.target.value === "" ? null : e.target.value,
+                  },
+                }))
+              }
+              disabled={isSaving}
+              rows={3}
+              placeholder={title}
+              className="resize-y rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
         </div>
       </HeroFieldEditor>
 
@@ -180,11 +224,16 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         label="Event subtitle"
         idPrefix="hero-subtitle"
         settings={heroSettings.subtitle}
-        onChange={(next) => setHeroSettings((prev) => ({ ...prev, subtitle: next }))}
+        onChange={(next) =>
+          setHeroSettings((prev) => ({ ...prev, subtitle: next }))
+        }
         disabled={isSaving}
       >
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="event-subtitle" className="text-sm font-medium text-foreground">
+          <label
+            htmlFor="event-subtitle"
+            className="text-sm font-medium text-foreground"
+          >
             Subtitle
           </label>
           <input
@@ -202,11 +251,16 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         label="Event date"
         idPrefix="hero-date"
         settings={heroSettings.date}
-        onChange={(next) => setHeroSettings((prev) => ({ ...prev, date: next }))}
+        onChange={(next) =>
+          setHeroSettings((prev) => ({ ...prev, date: next }))
+        }
         disabled={isSaving}
       >
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="event-date" className="text-sm font-medium text-foreground">
+          <label
+            htmlFor="event-date"
+            className="text-sm font-medium text-foreground"
+          >
             Date
           </label>
           <input
@@ -233,7 +287,10 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         disabled={isSaving}
       >
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="hero-guestbook-text-content" className="text-sm font-medium text-foreground">
+          <label
+            htmlFor="hero-guestbook-text-content"
+            className="text-sm font-medium text-foreground"
+          >
             Text
           </label>
           <input
@@ -243,7 +300,10 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             onChange={(e) =>
               setHeroSettings((prev) => ({
                 ...prev,
-                guestbookText: { ...prev.guestbookText, content: e.target.value },
+                guestbookText: {
+                  ...prev.guestbookText,
+                  content: e.target.value,
+                },
               }))
             }
             disabled={isSaving}
@@ -253,12 +313,15 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       </HeroFieldEditor>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="hero-decoration" className="text-sm font-medium text-foreground">
+        <label
+          htmlFor="hero-decoration"
+          className="text-sm font-medium text-foreground"
+        >
           Hero decoration
         </label>
         <p className="text-xs text-muted-foreground">
-          Floral flourishes frame the guestbook text line above the CTAs. Only shown when that
-          text is also set to show.
+          Floral flourishes frame the guestbook text line above the CTAs. Only
+          shown when that text is also set to show.
         </p>
         <select
           id="hero-decoration"
@@ -288,14 +351,21 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       />
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-foreground">Accent color</span>
+        <span className="text-sm font-medium text-foreground">
+          Accent color
+        </span>
         <p className="text-xs text-muted-foreground">
-          Automatic pulls a color from the cover photo (falling back to the color below if
-          there&apos;s no photo, or the extracted color doesn&apos;t pass a contrast check).
-          Custom always uses the color you pick here instead.
+          Automatic pulls a color from the cover photo (falling back to the
+          color below if there&apos;s no photo, or the extracted color
+          doesn&apos;t pass a contrast check). Custom always uses the color you
+          pick here instead.
         </p>
 
-        <div role="radiogroup" aria-label="Accent color mode" className="flex gap-4">
+        <div
+          role="radiogroup"
+          aria-label="Accent color mode"
+          className="flex gap-4"
+        >
           <label className="flex items-center gap-1.5 text-sm text-foreground">
             <input
               type="radio"
@@ -339,8 +409,9 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         </div>
         {accentMode === "automatic" && (
           <p className="text-xs text-muted-foreground">
-            This color is only used as the fallback described above — it won&apos;t override a
-            successfully extracted cover-photo color. Switch to Custom to force it.
+            This color is only used as the fallback described above — it
+            won&apos;t override a successfully extracted cover-photo color.
+            Switch to Custom to force it.
           </p>
         )}
       </div>
@@ -363,9 +434,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
           {error}
         </p>
       )}
-      {saveState === "SUCCESS" && (
-        <p className="text-sm text-accent">Saved.</p>
-      )}
+      {saveState === "SUCCESS" && <p className="text-sm text-accent">Saved.</p>}
 
       <button
         type="submit"
