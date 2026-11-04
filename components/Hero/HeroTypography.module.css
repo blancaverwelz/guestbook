@@ -1,0 +1,10 @@
+.text {
+  font-size: var(--hero-mobile-size);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 768px) {
+  .text {
+    font-size: var(--hero-desktop-size);
+  }
+}

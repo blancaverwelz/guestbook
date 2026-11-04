@@ -38,6 +38,9 @@ export const HERO_FONT_SIZES = [16, 20, 24, 28, 32, 40, 48, 56, 64] as const;
 
 export type HeroFontSize = (typeof HERO_FONT_SIZES)[number];
 
+export const HERO_MOBILE_FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64] as const;
+export type HeroMobileFontSize = (typeof HERO_MOBILE_FONT_SIZES)[number];
+
 export const HERO_DECORATIONS = ["floral", "none"] as const;
 
 export type HeroDecoration = (typeof HERO_DECORATIONS)[number];
@@ -45,7 +48,10 @@ export type HeroDecoration = (typeof HERO_DECORATIONS)[number];
 export interface HeroFieldSettings {
   visible: boolean;
   fontFamily: HeroFontFamily;
+  /** Desktop size, retaining the existing stored key for compatibility. */
   fontSize: HeroFontSize;
+  /** Null preserves the original fluid mobile sizing until explicitly changed. */
+  mobileFontSize: HeroMobileFontSize | null;
 }
 
 export interface HeroTitleSettings extends HeroFieldSettings {
@@ -88,14 +94,16 @@ export const DEFAULT_HERO_SETTINGS: HeroSettings = {
     visible: true,
     fontFamily: "Cormorant Garamond",
     fontSize: 48,
+    mobileFontSize: null,
     content: null,
   },
-  subtitle: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 20 },
-  date: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 16 },
+  subtitle: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 20, mobileFontSize: null },
+  date: { visible: true, fontFamily: "Cormorant Garamond", fontSize: 16, mobileFontSize: null },
   guestbookText: {
     visible: true,
     fontFamily: "Great Vibes",
     fontSize: 40,
+    mobileFontSize: null,
     content: "Sign Our Guestbook",
   },
   decoration: "floral",
@@ -113,6 +121,11 @@ function isHeroFontSize(value: unknown): value is HeroFontSize {
     typeof value === "number" &&
     (HERO_FONT_SIZES as readonly number[]).includes(value)
   );
+}
+
+function isHeroMobileFontSize(value: unknown): value is HeroMobileFontSize {
+  return typeof value === "number" &&
+    (HERO_MOBILE_FONT_SIZES as readonly number[]).includes(value);
 }
 
 function isHeroDecoration(value: unknown): value is HeroDecoration {
@@ -134,6 +147,7 @@ function parseFieldSettings(
       ? r.fontFamily
       : fallback.fontFamily,
     fontSize: isHeroFontSize(r.fontSize) ? r.fontSize : fallback.fontSize,
+    mobileFontSize: isHeroMobileFontSize(r.mobileFontSize) ? r.mobileFontSize : null,
   };
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
+import type { CSSProperties } from "react";
+import typography from "./HeroTypography.module.css";
 import CoverPhoto from "./CoverPhoto";
 import { motion } from "framer-motion";
 import FloralEngrave from "./FloralEngrave";
 import { useAccentColor } from "./AccentColorProvider";
-import { parseStoredHeroSettings } from "@/lib/heroSettings";
+import { parseStoredHeroSettings, type HeroFieldSettings } from "@/lib/heroSettings";
 import { HERO_FONT_CLASS_NAMES } from "@/lib/heroFonts";
 import type { LandingEvent } from "@/types/event";
 
@@ -19,16 +21,15 @@ import type { LandingEvent } from "@/types/event";
  * possible with next/font.
  */
 
-/**
- * Renders an admin-selected font size as a fluid value rather than a flat
- * px — a 64px title selection would overflow a narrow phone if applied
- * as-is with no responsive variants. Scales between 60% and 100% of the
- * chosen size across viewport width instead of needing separate
- * mobile/desktop settings.
- */
-function heroFontSizeStyle(size: number): React.CSSProperties {
-  const min = Math.round(size * 0.6);
-  return { fontSize: `clamp(${min}px, ${min}px + 3vw, ${size}px)` };
+/** CSS switches sizes at the same breakpoint as the cover preview. */
+function heroFontSizeStyle(settings: HeroFieldSettings): CSSProperties {
+  const min = Math.round(settings.fontSize * 0.6);
+  return {
+    "--hero-desktop-size": `${settings.fontSize}px`,
+    "--hero-mobile-size": settings.mobileFontSize === null
+      ? `clamp(${min}px, ${min}px + 3vw, ${settings.fontSize}px)`
+      : `${settings.mobileFontSize}px`,
+  } as CSSProperties;
 }
 
 function formatEventDate(isoDate: string | null): string | null {
@@ -107,24 +108,24 @@ export default function Hero({ event }: HeroProps) {
         >
           {heroSettings.title.visible && (
             <h1
-              className={`${HERO_FONT_CLASS_NAMES[heroSettings.title.fontFamily]} whitespace-pre-line font-semibold tracking-wide`}
-              style={heroFontSizeStyle(heroSettings.title.fontSize)}
+              className={`${typography.text} ${HERO_FONT_CLASS_NAMES[heroSettings.title.fontFamily]} whitespace-pre-line font-semibold tracking-wide`}
+              style={heroFontSizeStyle(heroSettings.title)}
             >
               {heroTitle}
             </h1>
           )}
           {heroSettings.subtitle.visible && event.subtitle && (
             <p
-              className={`${HERO_FONT_CLASS_NAMES[heroSettings.subtitle.fontFamily]} mt-1 italic text-muted-foreground`}
-              style={heroFontSizeStyle(heroSettings.subtitle.fontSize)}
+              className={`${typography.text} ${HERO_FONT_CLASS_NAMES[heroSettings.subtitle.fontFamily]} mt-1 italic text-muted-foreground`}
+              style={heroFontSizeStyle(heroSettings.subtitle)}
             >
               {event.subtitle}
             </p>
           )}
           {heroSettings.date.visible && formattedDate && (
             <p
-              className={`${HERO_FONT_CLASS_NAMES[heroSettings.date.fontFamily]} mt-2 uppercase tracking-[0.2em] text-muted-foreground`}
-              style={heroFontSizeStyle(heroSettings.date.fontSize)}
+              className={`${typography.text} ${HERO_FONT_CLASS_NAMES[heroSettings.date.fontFamily]} mt-2 uppercase tracking-[0.2em] text-muted-foreground`}
+              style={heroFontSizeStyle(heroSettings.date)}
             >
               {formattedDate}
             </p>
@@ -159,8 +160,8 @@ export default function Hero({ event }: HeroProps) {
               <FloralEngrave className="h-10 w-full text-foreground/70 md:h-14" />
             )}
             <p
-              className={`${HERO_FONT_CLASS_NAMES[heroSettings.guestbookText.fontFamily]} px-2 leading-tight text-foreground`}
-              style={heroFontSizeStyle(heroSettings.guestbookText.fontSize)}
+              className={`${typography.text} ${HERO_FONT_CLASS_NAMES[heroSettings.guestbookText.fontFamily]} px-2 leading-tight text-foreground`}
+              style={heroFontSizeStyle(heroSettings.guestbookText)}
             >
               {heroSettings.guestbookText.content}
             </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { HERO_FONT_FAMILIES, HERO_FONT_SIZES, type HeroFieldSettings } from "@/lib/heroSettings";
+import { HERO_FONT_FAMILIES, HERO_FONT_SIZES, HERO_MOBILE_FONT_SIZES, type HeroFieldSettings } from "@/lib/heroSettings";
 
 interface HeroFieldEditorProps {
   /** Label for this field's whole group, e.g. "Event title". */
@@ -11,8 +11,7 @@ interface HeroFieldEditorProps {
   disabled?: boolean;
   /**
    * Optional content editor rendered above the visibility/font controls —
-   * only Hero Guestbook Text uses this (title/subtitle/date already have
-   * their own content inputs elsewhere in EventEditor's form).
+   * supplied by EventEditor for each field.
    */
   children?: React.ReactNode;
 }
@@ -75,7 +74,7 @@ export default function HeroFieldEditor({
 
         <div className="flex flex-col gap-1">
           <label htmlFor={`${idPrefix}-font-size`} className="text-xs text-muted-foreground">
-            Font size
+            Desktop size
           </label>
           <select
             id={`${idPrefix}-font-size`}
@@ -93,7 +92,32 @@ export default function HeroFieldEditor({
             ))}
           </select>
         </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${idPrefix}-mobile-font-size`} className="text-xs text-muted-foreground">
+            Mobile size
+          </label>
+          <select
+            id={`${idPrefix}-mobile-font-size`}
+            value={settings.mobileFontSize ?? "auto"}
+            onChange={(e) => onChange({
+              ...settings,
+              mobileFontSize: e.target.value === "auto"
+                ? null
+                : Number(e.target.value) as HeroFieldSettings["mobileFontSize"],
+            })}
+            disabled={disabled}
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <option value="auto">Automatic (existing scaling)</option>
+            {HERO_MOBILE_FONT_SIZES.map((size) => (
+              <option key={size} value={size}>{size}px</option>
+            ))}
+          </select>
+        </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Mobile: below 768px. Desktop: 768px and wider. Choose a mobile size to make it independent of desktop.
+      </p>
     </div>
   );
 }
