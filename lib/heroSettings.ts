@@ -1,3 +1,5 @@
+import { DEFAULT_COVER_SETTINGS, parseCoverSettings, type CoverSettings } from "./coverSettings";
+
 /**
  * Shared type/data module for the per-event Hero "content & typography"
  * settings added in Chat 14. Encoded as a single `events.hero_settings`
@@ -55,6 +57,7 @@ export interface HeroGuestbookTextSettings extends HeroFieldSettings {
 }
 
 export interface HeroSettings {
+  cover: CoverSettings;
   title: HeroTitleSettings;
   subtitle: HeroFieldSettings;
   date: HeroFieldSettings;
@@ -80,6 +83,7 @@ export interface HeroSettings {
  * the FloralEngrave flourishes unconditionally before this chat.
  */
 export const DEFAULT_HERO_SETTINGS: HeroSettings = {
+  cover: DEFAULT_COVER_SETTINGS,
   title: {
     visible: true,
     fontFamily: "Cormorant Garamond",
@@ -149,6 +153,7 @@ export function parseStoredHeroSettings(raw: unknown): HeroSettings {
       : {};
 
   return {
+    cover: parseCoverSettings(r.cover),
     title: {
       ...parseFieldSettings(titleRaw, DEFAULT_HERO_SETTINGS.title),
       content:
@@ -182,6 +187,7 @@ export function parseStoredHeroSettings(raw: unknown): HeroSettings {
 export function serializeHeroSettings(settings: HeroSettings): HeroSettings {
   return {
     ...settings,
+    cover: parseCoverSettings(settings.cover),
     title: {
       ...settings.title,
       content:

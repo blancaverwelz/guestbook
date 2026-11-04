@@ -15,6 +15,7 @@ import {
   type HeroSettings,
   type HeroDecoration,
 } from "@/lib/heroSettings";
+import CoverPositionEditor from "./CoverPositionEditor";
 import CoverImageUploader from "./CoverImageUploader";
 import HeroFieldEditor from "./HeroFieldEditor";
 import type { AdminEvent } from "./types";
@@ -347,6 +348,22 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
         eventId={event.id}
         currentImageUrl={coverImage.trim() === "" ? null : coverImage}
         onUploaded={(url) => setCoverImage(url)}
+        disabled={isSaving}
+      />
+
+      <CoverPositionEditor
+        key={event.id}
+        event={{
+          ...event,
+          title,
+          subtitle: subtitle.trim() || null,
+          event_date: eventDate || null,
+          cover_image: coverImage.trim() || null,
+          accent_color: serializeStoredAccent(accentMode, accentColor),
+          hero_settings: heroSettings,
+        }}
+        value={heroSettings.cover}
+        onChange={(cover) => setHeroSettings((previous) => ({ ...previous, cover }))}
         disabled={isSaving}
       />
 

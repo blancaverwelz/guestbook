@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import CoverPhoto from "./CoverPhoto";
 import { motion } from "framer-motion";
 import FloralEngrave from "./FloralEngrave";
 import { useAccentColor } from "./AccentColorProvider";
@@ -58,37 +58,9 @@ export default function Hero({ event }: HeroProps) {
 
   return (
     <section className="relative flex min-h-[42vh] w-full flex-1 items-end overflow-hidden sm:min-h-[52vh] md:min-h-[70vh]">
-      {/* Background: cover photo if the host set one, otherwise a soft
-          gradient built from this event's own accent color so the hero
-          never looks broken/blank for an event without a photo yet.
-
-          Chat 13 follow-up: a large/desktop-oriented cover photo cropped
-          via object-cover into a narrow mobile viewport was losing its
-          subject when the box was near-square (55vh tall against a ~375px
-          wide phone crops a wide photo down to a sliver). Two changes,
-          both about the crop box/anchor rather than the image itself —
-          object-cover full-bleed is kept, nothing shrinks and nothing
-          letterboxes:
-            1. Shorter min-height on small viewports (42vh/52vh vs the
-               previous flat 55vh) makes the crop box itself closer to the
-               photo's own wide aspect ratio, so less of its width has to
-               be cropped away to fill it.
-            2. object-position biased to the upper-third (50% 30%) instead
-               of dead-center — most hero photography (people, a couple,
-               an arch) sits in the upper-to-middle band of a landscape
-               shot, not vertically centered, so a plain center crop is
-               more likely to cut off the actual subject than a
-               slightly-above-center one. */}
       <div className="absolute inset-0">
         {event.cover_image ? (
-          <Image
-            src={event.cover_image}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[50%_30%]"
-          />
+          <CoverPhoto src={event.cover_image} settings={heroSettings.cover} />
         ) : (
           <div
             className="h-full w-full"
@@ -103,7 +75,10 @@ export default function Hero({ event }: HeroProps) {
             a hardcoded dark overlay — this is what lets a single
             `text-foreground` value stay legible over it in both light and
             dark mode instead of needing separate light/dark text colors. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/10" />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/10"
+          style={{ opacity: event.cover_image ? heroSettings.cover.overlay / 100 : 1 }}
+        />
       </div>
 
       <motion.div

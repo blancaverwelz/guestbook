@@ -1,0 +1,23 @@
+.frame {
+  --x: var(--mobile-x);
+  --y: var(--mobile-y);
+  --zoom: var(--mobile-zoom);
+  position: absolute;
+  width: calc(var(--zoom) * 100%);
+  height: calc(var(--zoom) * 100%);
+  left: calc((1 - var(--zoom)) * var(--x));
+  top: calc((1 - var(--zoom)) * var(--y));
+}
+
+.image {
+  object-fit: cover;
+  object-position: var(--x) var(--y);
+}
+
+@media (min-width: 768px) {
+  .frame {
+    --x: var(--desktop-x);
+    --y: var(--desktop-y);
+    --zoom: var(--desktop-zoom);
+  }
+}
