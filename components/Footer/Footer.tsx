@@ -8,12 +8,12 @@ export default function Footer() {
         <p>
           Designed & Developed by{" "}
           <a
-            href="https://blncvr-studios.vercel.app/"
+            href="https://blancaver-studios.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-[var(--accent)] transition-colors"
           >
-            BLNCVR Studios
+            Blancaver Studios
           </a>
         </p>
       </div>
