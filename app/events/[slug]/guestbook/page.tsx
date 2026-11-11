@@ -33,10 +33,14 @@ export default async function GuestbookPage({ params }: GuestbookPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10 text-foreground">
-      <div className="mx-auto max-w-2xl">
-        <h1 className="mb-6 text-2xl font-semibold">{event.title} — Guestbook</h1>
-        <GuestbookFeed eventId={event.id} />
+    <main className="archive-stage min-h-screen px-4 pb-24 pt-6 text-foreground sm:px-6">
+      <div className="mx-auto w-full max-w-5xl">
+        <GuestbookFeed
+          key={event.id}
+          eventId={event.id}
+          eventTitle={event.title}
+          messageHref={`/events/${slug}/message`}
+        />
       </div>
     </main>
   );

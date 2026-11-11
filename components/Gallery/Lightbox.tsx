@@ -176,7 +176,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="fixed inset-0 z-50 flex flex-col bg-black/95 outline-none"
+      className="photo-viewer-backdrop fixed inset-0 z-50 flex flex-col bg-black/95 outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

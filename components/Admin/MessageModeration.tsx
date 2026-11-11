@@ -152,7 +152,7 @@ export default function MessageModeration({ eventId }: { eventId: string }) {
                 type="button"
                 onClick={() => void handleAction(m.id, "approved")}
                 disabled={busy}
-                className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-60"
               >
                 <Check size={14} />
                 {rowState === "APPROVING" ? "Approving..." : "Approve"}
@@ -161,7 +161,7 @@ export default function MessageModeration({ eventId }: { eventId: string }) {
                 type="button"
                 onClick={() => void handleAction(m.id, "rejected")}
                 disabled={busy}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-opacity disabled:opacity-60"
               >
                 <X size={14} />
                 {rowState === "REJECTING" ? "Rejecting..." : "Reject"}

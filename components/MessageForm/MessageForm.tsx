@@ -1,93 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { CircleAlert, PenLine } from "lucide-react";
 import { useMessageSubmit } from "@/hooks/useMessageSubmit";
+import fonts from "@/lib/editorialFonts.module.css";
+import { MESSAGE_MAX, NAME_MAX } from "@/lib/messageLimits";
 import { SuccessState } from "./SuccessState";
 
-const NAME_MAX = 80;
-const MESSAGE_MAX = 500;
+const fieldFocus = "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--note-sign)]";
 
-interface MessageFormProps {
-  eventId: string;
-}
-
-export function MessageForm({ eventId }: MessageFormProps) {
+export function MessageForm({ eventId }: { eventId: string }) {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const messageField = useRef<HTMLTextAreaElement>(null);
   const { state, error, submit, reset } = useMessageSubmit({ eventId });
+  const isSubmitting = state === "SUBMITTING";
 
-  if (state === "SUCCESS") {
-    return (
-      <SuccessState
-        onReset={() => {
-          reset();
-          setName("");
-          setMessage("");
-        }}
-      />
-    );
+  function startAnotherNote() {
+    setName("");
+    setMessage("");
+    reset();
+    requestAnimationFrame(() => messageField.current?.focus());
   }
 
-  const isSubmitting = state === "SUBMITTING";
+  if (state === "SUCCESS") return <SuccessState onReset={startAnotherNote} />;
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit(name, message);
-      }}
-      className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6"
       noValidate
+      aria-label="Guestbook message"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit(name, message);
+      }}
     >
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="guest-name" className="text-sm font-medium text-foreground">
-          Your name
-        </label>
-        <input
-          id="guest-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={NAME_MAX}
-          disabled={isSubmitting}
-          autoComplete="name"
-          className="rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-          placeholder="Jane Doe"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="guest-message" className="text-sm font-medium text-foreground">
-          Your message
-        </label>
+      <div className="archive-note px-6 py-7 sm:p-9">
         <textarea
-          id="guest-message"
+          aria-label="Your message"
+          ref={messageField}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(event) => setMessage(event.target.value)}
           maxLength={MESSAGE_MAX}
           disabled={isSubmitting}
-          rows={5}
-          className="resize-none rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
-          placeholder="Wishing you both a lifetime of happiness..."
+          required
+          aria-describedby="message-count"
+          rows={3}
+          placeholder="write your message here..."
+          className={`${fonts.bodyFace} ${fieldFocus} archive-text block w-full resize-y border border-[color-mix(in_srgb,var(--note-sign)_30%,transparent)] bg-transparent px-4 py-3 text-[1.0625rem] leading-[1.75] placeholder:text-[var(--note-muted)] disabled:opacity-60 sm:text-lg sm:leading-[1.8]`}
         />
-        <span className="self-end text-xs text-muted-foreground">
-          {message.length}/{MESSAGE_MAX}
-        </span>
+        <span id="message-count" className="archive-muted mt-1 block text-right text-xs tabular-nums">{message.length} / {MESSAGE_MAX}</span>
+
+        <div className="mt-3 flex items-center gap-3">
+          <span aria-hidden className="archive-sign-bg h-px w-6 shrink-0" />
+          <input
+            aria-label="Your name"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={NAME_MAX}
+            disabled={isSubmitting}
+            required
+            placeholder="Your name"
+            className={`${fonts.displayFace} ${fieldFocus} archive-sign min-h-11 min-w-0 flex-1 bg-transparent text-2xl font-medium italic leading-tight placeholder:text-current placeholder:opacity-100 disabled:opacity-60`}
+          />
+        </div>
       </div>
 
       {state === "ERROR" && error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-4 flex items-start justify-center gap-2 text-sm text-foreground">
+          <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           {error}
         </p>
       )}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-md bg-accent px-4 py-2 font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isSubmitting ? "Sending..." : state === "ERROR" ? "Try again" : "Send message"}
-      </button>
+      <div className="mt-6 text-center">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground shadow-sm enabled:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground disabled:opacity-60"
+        >
+          <PenLine aria-hidden className="size-4" />
+          {isSubmitting ? "Sending..." : state === "ERROR" ? "Try again" : "Send message"}
+        </button>
+      </div>
     </form>
   );
 }

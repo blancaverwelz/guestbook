@@ -1,13 +1,8 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import ArchiveIntro from "@/components/Guestbook/ArchiveIntro";
 import { MessageForm } from "@/components/MessageForm/MessageForm";
 import { getEventBySlug } from "@/lib/events";
-
-// Chat 9 hotfix (Issue 2): was a local near-duplicate of this fetcher
-// selecting only `id, title`. Now imports the same shared, cache()-wrapped
-// fetcher used by the layout (see app/events/[slug]/layout.tsx and
-// lib/events.ts) — same request, same cached result, no second Supabase
-// round trip, and one fewer copy of this query to keep in sync.
 
 interface MessagePageProps {
   params: Promise<{ slug: string }>;
@@ -18,12 +13,11 @@ export async function generateMetadata({ params }: MessagePageProps): Promise<Me
   const event = await getEventBySlug(slug);
   if (!event) return {};
 
+  const title = event.title.trim();
   return {
-    title: `Leave a Message — ${event.title}`,
-    description: `Leave a message for ${event.title}.`,
+    title: title ? `Leave a Message — ${title}` : "Leave a Message",
+    description: title ? `Leave a message for ${title}.` : "Leave a message in the guestbook.",
     alternates: { canonical: `/events/${slug}/message` },
-    // Guest-submission routes aren't meant to be indexed/shared as
-    // destinations in their own right — the landing page is.
     robots: { index: false, follow: true },
   };
 }
@@ -31,20 +25,18 @@ export async function generateMetadata({ params }: MessagePageProps): Promise<Me
 export default async function MessagePage({ params }: MessagePageProps) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
+  if (!event) notFound();
 
-  if (!event) {
-    notFound();
-  }
-
+  const title = event.title.trim();
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 px-4 py-16">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Leave a Message
-        </h1>
-        <p className="text-sm text-muted-foreground">for {event.title}</p>
+    <main className="archive-stage min-h-screen px-4 pb-16 pt-4 text-foreground sm:px-6 sm:pb-24">
+      <div className="mx-auto w-full max-w-xl">
+        <ArchiveIntro
+          title="Leave a message."
+          description={title ? `A wish, a memory, or a few words for ${title}.` : "A wish, a memory, or a few words from today."}
+        />
+        <MessageForm key={event.id} eventId={event.id} />
       </div>
-      <MessageForm eventId={event.id} />
     </main>
   );
 }

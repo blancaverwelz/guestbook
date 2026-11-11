@@ -1,0 +1,68 @@
+/* The full local fonts cover other scripts. Latin faces keep common guest names and notes small. */
+
+@font-face {
+  font-family: "Archive Display";
+  src: url("./fonts/cormorantgaramond/normal.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archive Display";
+  src: url("./fonts/cormorantgaramond/normal-latin.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0300-036F, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@font-face {
+  font-family: "Archive Display";
+  src: url("./fonts/cormorantgaramond/italic.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archive Display";
+  src: url("./fonts/cormorantgaramond/italic-latin.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0300-036F, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+.displayFace {
+  font-family: "Archive Display", "Times New Roman", serif;
+}
+
+@font-face {
+  font-family: "Archive Body";
+  src: url("./fonts/lora/normal.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archive Body";
+  src: url("./fonts/lora/normal-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0300-036F, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@font-face {
+  font-family: "Archive Body";
+  src: url("./fonts/lora/italic.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+.bodyFace {
+  font-family: "Archive Body", "Times New Roman", serif;
+}

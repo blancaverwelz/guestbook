@@ -1,5 +1,3 @@
-import Logo from "@/components/Logo/Logo";
-
 export default function Footer() {
   return (
     <footer className="border-t border-border bg-background text-foreground">

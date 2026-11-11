@@ -1,99 +1,86 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useGuestbookFeed } from "@/hooks/useGuestbookFeed";
-import MessageCard from "./MessageCard";
+import { normalizeSearch, SEARCH_MAX_LENGTH } from "@/lib/guestbook/pagination";
+import { formatCount, groupByDay } from "@/lib/guestbook/presentation";
+import ArchiveSkeleton from "./ArchiveSkeleton";
 import EmptyState from "./EmptyState";
+import GuestbookIntro from "./GuestbookIntro";
+import GuestbookPagination from "./GuestbookPagination";
+import GuestbookToolbar from "./GuestbookToolbar";
+import MessageGrid from "./MessageGrid";
 
-function MessageSkeleton() {
-  return (
-    <li className="animate-pulse rounded-lg border border-border bg-card p-4">
-      <div className="h-4 w-24 rounded bg-muted-foreground/20" />
-      <div className="mt-3 h-3 w-full rounded bg-muted-foreground/20" />
-      <div className="mt-2 h-3 w-2/3 rounded bg-muted-foreground/20" />
-    </li>
-  );
-}
+type Props = { eventId: string; eventTitle: string; messageHref: string };
 
-type GuestbookFeedProps = {
-  eventId: string;
-};
-
-export default function GuestbookFeed({ eventId }: GuestbookFeedProps) {
-  const { messages, loading, loadingMore, error, hasMore, loadMore } =
-    useGuestbookFeed(eventId);
-
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+export default function GuestbookFeed({ eventId, eventTitle, messageHref }: Props) {
+  const [searchInput, setSearchInput] = useState("");
+  const search = normalizeSearch(useDebouncedValue(searchInput, 300));
+  const { view, setView, data, error } = useGuestbookFeed(eventId);
+  const results = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
+    setView(current => current.search === search ? current : { ...current, search, page: 1 });
+  }, [search, setView]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
-      },
-      { rootMargin: "200px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMore, loadMore]);
-
-  if (loading) {
-    return (
-      <ul className="flex flex-col gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <MessageSkeleton key={i} />
-        ))}
-      </ul>
-    );
+  function goToPage(page: number) {
+    setView(current => ({ ...current, page }));
+    results.current?.focus({ preventScroll: true });
+    results.current?.scrollIntoView({ block: "start", behavior: "instant" });
   }
 
-  if (error && messages.length === 0) {
-    return (
-      <div className="rounded-lg border border-border bg-card p-6 text-center text-foreground">
-        {error}
-      </div>
-    );
-  }
-
-  if (messages.length === 0) {
-    return <EmptyState />;
-  }
+  const emptyArchive = data?.total === 0 && !view.search;
+  const pageStatus = data && `Page ${view.page} of ${data.pages}`;
+  const searchStatus = data && view.search && `${formatCount(data.count)} found for “${view.search}”`;
+  const status = error ?? ([searchStatus, pageStatus].filter(Boolean).join(". ") || "Loading messages…");
+  const reload = () => setView(current => ({ ...current }));
 
   return (
-    <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-3">
-        {/* initial (default true) is intentional here, not an oversight —
-            it's what makes the very first batch of messages play the
-            staggered fade-in on load. AnimatePresence's `initial` prop
-            only affects children present at AnimatePresence's own mount,
-            which for this component is exactly "the first page of
-            messages," since nothing renders until `loading` is false. */}
-        <AnimatePresence mode="popLayout">
-          {messages.map((m, i) => (
-            <MessageCard
-              key={m.id}
-              name={m.name}
-              message={m.message}
-              createdAt={m.created_at}
-              index={i}
-            />
-          ))}
-        </AnimatePresence>
-      </ul>
-
-      {hasMore && (
-        <div ref={sentinelRef} className="py-4 text-center text-sm text-muted-foreground">
-          {loadingMore ? "Loading more…" : ""}
-        </div>
+    <>
+      <GuestbookIntro eventTitle={eventTitle} messageHref={messageHref} approvedTotal={data?.total ?? null} />
+      {!emptyArchive && (
+        <GuestbookToolbar
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          order={view.order}
+          onOrderChange={order => setView(current => current.order === order ? current : { ...current, order, page: 1 })}
+          statusText={status}
+          busy={!data && !error}
+          maxLength={SEARCH_MAX_LENGTH}
+        />
       )}
-
-      {error && messages.length > 0 && (
-        <p className="text-center text-sm text-muted-foreground">{error}</p>
-      )}
-    </div>
+      <section ref={results} tabIndex={-1} aria-label="Guestbook messages" className="scroll-mt-24 focus:outline-none">
+        {error ? (
+          <div role="alert" className="flex flex-col items-center gap-3 text-center">
+            <p>{error}</p>
+            <button type="button" onClick={reload} className="min-h-11 px-4 underline">Try again</button>
+          </div>
+        ) : !data ? (
+          <ArchiveSkeleton />
+        ) : emptyArchive ? (
+          <EmptyState variant="archive" messageHref={messageHref} />
+        ) : data.count === 0 ? (
+          <EmptyState variant="search" query={view.search} onClear={() => setSearchInput("")} />
+        ) : (
+          <>
+            {(searchStatus || data.pages > 1) && (
+              <p className="mb-8 text-center text-sm text-muted-foreground">
+                {[searchStatus, pageStatus].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {data.updated && (
+              <div className="sticky top-16 z-30 mb-6 flex justify-center">
+                <button type="button" onClick={reload} className="min-h-11 rounded-full bg-foreground px-5 text-sm text-background">
+                  Show updated page
+                </button>
+              </div>
+            )}
+            <MessageGrid groups={groupByDay(data.rows)} />
+            <GuestbookPagination page={view.page} pages={data.pages} onPage={goToPage} />
+          </>
+        )}
+      </section>
+    </>
   );
 }

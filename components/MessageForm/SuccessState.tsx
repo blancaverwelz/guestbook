@@ -1,25 +1,25 @@
-interface SuccessStateProps {
-  onReset?: () => void;
-}
+import { useEffect, useRef } from "react";
+import { Check } from "lucide-react";
+import fonts from "@/lib/editorialFonts.module.css";
 
-export function SuccessState({ onReset }: SuccessStateProps) {
+export function SuccessState({ onReset }: { onReset: () => void }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { heading.current?.focus(); }, []);
+
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-8 text-center">
-      <span aria-hidden className="text-3xl text-accent">
-        ✓
-      </span>
-      <p className="text-base font-medium text-foreground">
-        Thank you! Your message has been added.
+    <section className="archive-note px-6 py-7 text-center sm:p-9">
+      <Check aria-hidden className="archive-sign mx-auto mb-3 size-6" />
+      <h2 ref={heading} tabIndex={-1} aria-describedby="message-confirmation"
+        className={`${fonts.displayFace} archive-text text-4xl font-medium`}>
+        Thank you for your note.
+      </h2>
+      <p id="message-confirmation" className="archive-muted mx-auto mt-2 max-w-sm text-sm leading-relaxed">
+        Your message has been sent for approval. It will appear in the guestbook once the hosts approve it.
       </p>
-      {onReset && (
-        <button
-          type="button"
-          onClick={onReset}
-          className="text-sm text-accent underline underline-offset-2 hover:opacity-80"
-        >
-          Leave another message
-        </button>
-      )}
-    </div>
+      <button type="button" onClick={onReset}
+        className="archive-toggle mt-3 min-h-11 rounded-sm px-2 text-sm font-medium underline underline-offset-4">
+        Leave another message
+      </button>
+    </section>
   );
 }

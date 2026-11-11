@@ -61,9 +61,7 @@ export default function CoverImageUploader({
       <label className="text-sm font-medium text-foreground">Cover image</label>
 
       {currentImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- Supabase
-        // Storage public URL, not guaranteed to be a next/image-configured
-        // remote pattern.
+        // eslint-disable-next-line @next/next/no-img-element -- The editor accepts existing cover URLs from arbitrary hosts.
         <img
           src={currentImageUrl}
           alt=""
@@ -94,7 +92,7 @@ export default function CoverImageUploader({
         type="button"
         disabled={disabled || isBusy}
         onClick={() => inputRef.current?.click()}
-        className="flex w-fit items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-fit items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-opacity disabled:opacity-60"
       >
         <ImagePlus size={16} aria-hidden />
         {isBusy ? stageLabel : currentImageUrl ? "Replace cover image" : "Upload cover image"}

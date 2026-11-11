@@ -1,63 +1,95 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useId, useState } from "react";
+import { useIsClamped } from "@/hooks/useIsClamped";
+import { HERO_FONT_CLASS_NAMES } from "@/lib/heroFonts";
+import {
+  formatFullDate,
+  formatTime,
+  type PresentedMessage,
+} from "@/lib/guestbook/presentation";
 
 type MessageCardProps = {
-  name: string;
-  message: string;
-  createdAt: string;
+  message: PresentedMessage;
+  /** Position in the current render; only used to cap the entrance stagger. */
   index?: number;
 };
 
-function formatRelativeTime(isoDate: string): string {
-  const date = new Date(isoDate);
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+// Type system: one body size for every message; serif only for the signature.
+const bodyFont = HERO_FONT_CLASS_NAMES["Lora"];
+const signatureFont = HERO_FONT_CLASS_NAMES["Cormorant Garamond"];
 
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-// Caps the stagger delay so a long initial batch doesn't leave the last
-// few cards visibly waiting — beyond ~8 items the cascade reads as
-// "loaded", not "staggering", anyway.
-const MAX_STAGGER_INDEX = 8;
+// Beyond a few cards a cascade reads as "loaded", not "staggering".
+const MAX_STAGGER_INDEX = 6;
 const STAGGER_STEP_S = 0.05;
 
-export default function MessageCard({
-  name,
-  message,
-  createdAt,
-  index = 0,
-}: MessageCardProps) {
+// Solo width follows how much a note has to say, up to a comfortable measure.
+// Full literals so Tailwind can see them.
+const SOLO_WIDTH = {
+  brief: "md:max-w-md",
+  standard: "md:max-w-xl",
+  long: "md:max-w-2xl",
+} as const;
+
+export default function MessageCard({ message, index = 0 }: MessageCardProps) {
+  const { placement, tone } = message;
+  const textId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const [textRef, clamped] = useIsClamped<HTMLParagraphElement>(!expanded, message.message);
+  const showToggle = expanded || clamped;
+
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{
-        duration: 0.25,
-        ease: "easeOut",
-        delay: Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_S,
-      }}
-      className="rounded-lg border border-border bg-card p-4"
+    <li
+      className={`archive-rise ${placement.row === "pair" ? "md:col-span-6" : "md:col-span-12"}`}
+      style={{ animationDelay: `${Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_S}s` }}
     >
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-medium text-foreground">{name}</p>
-        <time dateTime={createdAt} className="shrink-0 text-xs text-muted-foreground">
-          {formatRelativeTime(createdAt)}
-        </time>
-      </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">
-        {message}
-      </p>
-    </motion.li>
+      <article
+        data-tone={tone}
+        className={`archive-note w-full px-6 py-7 sm:px-9 sm:py-9 ${
+          placement.row === "solo" ? `md:mx-auto ${SOLO_WIDTH[placement.size]}` : ""
+        }`}
+      >
+        <p
+          id={textId}
+          ref={textRef}
+          className={`${bodyFont} archive-text whitespace-pre-wrap break-words text-[1.0625rem] leading-[1.75] sm:text-lg sm:leading-[1.8] ${
+            expanded ? "" : "line-clamp-8"
+          }`}
+        >
+          {message.message}
+        </p>
+
+        {showToggle && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={textId}
+            onClick={() => setExpanded((v) => !v)}
+            className="archive-toggle mt-2 min-h-11 rounded-md text-sm font-medium underline decoration-2 underline-offset-4"
+          >
+            {expanded ? "Show less" : "Read full message"}
+            <span className="sr-only"> from {message.name}</span>
+          </button>
+        )}
+
+        <footer className="mt-7 flex items-baseline justify-between gap-4">
+          <p className="flex min-w-0 items-center gap-3">
+            <span aria-hidden className="archive-sign-bg h-px w-6 shrink-0" />
+            <span
+              className={`${signatureFont} archive-sign min-w-0 break-words text-[1.375rem] font-medium italic leading-tight`}
+            >
+              {message.name}
+            </span>
+          </p>
+          <time
+            dateTime={message.created_at}
+            title={formatFullDate(message.created_at)}
+            className="archive-muted shrink-0 text-xs tabular-nums tracking-wide"
+          >
+            {formatTime(message.created_at)}
+          </time>
+        </footer>
+      </article>
+    </li>
   );
 }

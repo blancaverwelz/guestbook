@@ -29,9 +29,7 @@ export function UploadButton({ eventId }: UploadButtonProps) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center">
         {thumbnailPreviewUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- local
-          // object URL preview of the guest's own just-uploaded photo, not
-          // a remote image next/image would optimize.
+          // eslint-disable-next-line @next/next/no-img-element -- Local object URL for the upload preview.
           <img
             src={thumbnailPreviewUrl}
             alt="Your uploaded photo"
@@ -73,7 +71,7 @@ export function UploadButton({ eventId }: UploadButtonProps) {
         type="button"
         disabled={isBusy}
         onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-medium text-accent-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-medium text-accent-foreground transition-opacity disabled:opacity-60"
       >
         <ImagePlus size={18} aria-hidden />
         {isBusy ? stageLabel : "Add a photo"}

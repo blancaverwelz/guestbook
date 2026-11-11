@@ -185,7 +185,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
               onChange={(e) => setTitle(e.target.value)}
               disabled={isSaving}
               required
-              className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
             />
           </div>
 
@@ -215,7 +215,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
               disabled={isSaving}
               rows={3}
               placeholder={title}
-              className="resize-y rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className="resize-y rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
             />
           </div>
         </div>
@@ -243,7 +243,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             disabled={isSaving}
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
         </div>
       </HeroFieldEditor>
@@ -270,7 +270,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
             disabled={isSaving}
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
         </div>
       </HeroFieldEditor>
@@ -308,7 +308,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
               }))
             }
             disabled={isSaving}
-            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
         </div>
       </HeroFieldEditor>
@@ -334,7 +334,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             }))
           }
           disabled={isSaving}
-          className="w-40 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-40 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
         >
           {HERO_DECORATIONS.map((option) => (
             <option key={option} value={option}>
@@ -390,7 +390,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
               checked={accentMode === "automatic"}
               onChange={() => setAccentMode("automatic")}
               disabled={isSaving}
-              className="accent-[var(--accent)] disabled:cursor-not-allowed"
+              className="accent-[var(--accent)]"
             />
             Automatic
           </label>
@@ -401,7 +401,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
               checked={accentMode === "custom"}
               onChange={() => setAccentMode("custom")}
               disabled={isSaving}
-              className="accent-[var(--accent)] disabled:cursor-not-allowed"
+              className="accent-[var(--accent)]"
             />
             Custom
           </label>
@@ -414,14 +414,14 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
             value={accentColor}
             onChange={(e) => setAccentColor(e.target.value)}
             disabled={isSaving}
-            className="h-9 w-14 cursor-pointer rounded-md border border-border bg-background disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-9 w-14 rounded-md border border-border bg-background disabled:opacity-60"
           />
           <input
             type="text"
             value={accentColor}
             onChange={(e) => setAccentColor(e.target.value)}
             disabled={isSaving}
-            className="w-32 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-32 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
         </div>
         {accentMode === "automatic" && (
@@ -439,7 +439,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
           checked={galleryRequiresApproval}
           onChange={(e) => setGalleryRequiresApproval(e.target.checked)}
           disabled={isSaving}
-          className="h-4 w-4 rounded border-border accent-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-4 w-4 rounded border-border accent-[var(--accent)] disabled:opacity-60"
         />
         <span className="text-sm font-medium text-foreground">
           New gallery uploads require approval before appearing
@@ -456,7 +456,7 @@ export default function EventEditor({ event, onUpdated }: EventEditorProps) {
       <button
         type="submit"
         disabled={isSaving}
-        className="self-start rounded-md bg-accent px-4 py-2 font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="self-start rounded-md bg-accent px-4 py-2 font-medium text-white transition-opacity disabled:opacity-60"
       >
         {isSaving ? "Saving..." : "Save changes"}
       </button>

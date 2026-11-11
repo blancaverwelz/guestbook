@@ -215,7 +215,7 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
                     onClick={() => void handleApprove(item)}
                     disabled={busy}
                     aria-label="Approve photo"
-                    className="flex shrink-0 items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex shrink-0 items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white transition-opacity disabled:opacity-60"
                   >
                     <Check size={12} />
                     {approving ? "..." : "Approve"}
@@ -226,7 +226,7 @@ export default function GalleryModeration({ eventId }: { eventId: string }) {
                   onClick={() => void handleDelete(item)}
                   disabled={busy}
                   aria-label="Delete photo"
-                  className="flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-opacity disabled:opacity-60"
                 >
                   <Trash2 size={12} />
                   {deleting ? "..." : "Delete"}

@@ -44,7 +44,7 @@ export default function HeroFieldEditor({
             checked={settings.visible}
             onChange={(e) => onChange({ ...settings, visible: e.target.checked })}
             disabled={disabled}
-            className="h-4 w-4 rounded border-border accent-[var(--accent)] disabled:cursor-not-allowed"
+            className="h-4 w-4 rounded border-border accent-[var(--accent)]"
           />
           Show on hero
         </label>
@@ -62,7 +62,7 @@ export default function HeroFieldEditor({
             value={settings.fontFamily}
             onChange={(e) => onChange({ ...settings, fontFamily: e.target.value as HeroFieldSettings["fontFamily"] })}
             disabled={disabled}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           >
             {HERO_FONT_FAMILIES.map((font) => (
               <option key={font} value={font}>
@@ -83,7 +83,7 @@ export default function HeroFieldEditor({
               onChange({ ...settings, fontSize: Number(e.target.value) as HeroFieldSettings["fontSize"] })
             }
             disabled={disabled}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           >
             {HERO_FONT_SIZES.map((size) => (
               <option key={size} value={size}>
@@ -106,7 +106,7 @@ export default function HeroFieldEditor({
                 : Number(e.target.value) as HeroFieldSettings["mobileFontSize"],
             })}
             disabled={disabled}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           >
             <option value="auto">Automatic (existing scaling)</option>
             {HERO_MOBILE_FONT_SIZES.map((size) => (

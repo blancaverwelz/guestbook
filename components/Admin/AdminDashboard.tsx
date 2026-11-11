@@ -82,7 +82,7 @@ export default function AdminDashboard({ initialEvents, userEmail }: AdminDashbo
           type="button"
           onClick={handleLogout}
           disabled={signingOut}
-          className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-opacity disabled:opacity-60"
         >
           <LogOut size={14} />
           {signingOut ? "Signing out..." : "Sign out"}

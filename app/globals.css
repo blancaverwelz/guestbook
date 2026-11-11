@@ -44,3 +44,189 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Cursor feedback for a mouse or trackpad, including one paired with a touchscreen. */
+@layer base {
+  @media (any-hover: hover) and (any-pointer: fine) {
+    :where(
+      a[href], button, select, label[for], label:has(input),
+      input:is([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="date"]),
+      .photo-viewer-backdrop
+    ) {
+      cursor: pointer;
+    }
+
+    input::file-selector-button {
+      cursor: inherit;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: inherit;
+    }
+
+    /* The lightbox dismisses only clicks directly on the backdrop. */
+    .photo-viewer-backdrop > div {
+      cursor: auto;
+    }
+
+    :disabled,
+    label:has(:disabled),
+    label[for]:has(+ :disabled, + p + :disabled) {
+      cursor: not-allowed;
+    }
+  }
+}
+
+/*
+  Memory Archive (Guestbook) surfaces — single canonical definition.
+
+  Stage:  page atmosphere.
+  Note:   message surface, in three tones (ink / tint / paper) that alternate
+          down the page for contrast. Each tone sets the same six role tokens,
+          so components only ever reference roles (archive-text, archive-muted,
+          archive-sign), never raw colours. "paper" is the inverse surface:
+          ivory in dark mode, deep ink in light mode.
+  Sign:   the author's name takes the event accent's hue and chroma with its
+          lightness clamped per surface (light on dark, dark on light), so any
+          accent stays legible (>= 4.5:1 across a spread of test accents). It
+          is declared on the note itself so it resolves the per-event --accent
+          set by AccentColorProvider, not the static fallback above.
+*/
+:root {
+  --archive-page: #f5f2ec;
+  --archive-glow: 11%;
+  --archive-shadow: 0 1px 2px rgb(60 45 20 / 0.05), 0 22px 40px -28px rgb(60 45 20 / 0.32);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --archive-page: #121212;
+    --archive-glow: 9%;
+    --archive-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 26px 44px -26px rgb(0 0 0 / 0.85);
+  }
+}
+
+.archive-stage {
+  background:
+    radial-gradient(
+      56rem 26rem at 50% -4rem,
+      color-mix(in srgb, var(--accent) var(--archive-glow), transparent),
+      transparent 72%
+    ),
+    var(--archive-page);
+}
+
+/* Tone tokens — light theme (ink is the default tone). */
+.archive-note,
+.archive-note[data-tone="ink"] {
+  --note-bg: color-mix(in srgb, var(--accent) 2%, #ffffff);
+  --note-fg: #1a1a1a;
+  --note-muted: #6b6660;
+  --note-edge: rgb(60 45 20 / 0.12);
+  --sign-l-min: 0;
+  --sign-l-max: 0.45;
+}
+
+.archive-note[data-tone="tint"] {
+  --note-bg: color-mix(in srgb, var(--accent) 13%, #f1ece2);
+  --note-fg: #1a1a1a;
+  --note-muted: #55504a;
+  --note-edge: transparent;
+  --sign-l-min: 0;
+  --sign-l-max: 0.45;
+}
+
+.archive-note[data-tone="paper"] {
+  --note-bg: color-mix(in srgb, var(--accent) 6%, #1f1c18);
+  --note-fg: #f3efe7;
+  --note-muted: #b7b0a5;
+  --note-edge: transparent;
+  --sign-l-min: 0.74;
+  --sign-l-max: 1;
+}
+
+/* Tone tokens — dark theme. */
+@media (prefers-color-scheme: dark) {
+  .archive-note,
+  .archive-note[data-tone="ink"] {
+    --note-bg: color-mix(in srgb, var(--accent) 2.5%, #1b1b1b);
+    --note-fg: #ededed;
+    --note-muted: #a3a3a3;
+    --note-edge: rgb(255 255 255 / 0.09);
+    --sign-l-min: 0.74;
+    --sign-l-max: 1;
+  }
+
+  .archive-note[data-tone="tint"] {
+    --note-bg: color-mix(in srgb, var(--accent) 8%, #28252f);
+    --note-fg: #ededed;
+    --note-muted: #a9a8b0;
+    --note-edge: transparent;
+    --sign-l-min: 0.74;
+    --sign-l-max: 1;
+  }
+
+  .archive-note[data-tone="paper"] {
+    --note-bg: color-mix(in srgb, var(--accent) 4%, #e8e3d8);
+    --note-fg: #1c1a17;
+    --note-muted: #5f5a52;
+    --note-edge: transparent;
+    --sign-l-min: 0;
+    --sign-l-max: 0.45;
+  }
+}
+
+.archive-note {
+  /* Fallback for browsers without relative colour syntax: plain text colour. */
+  --note-sign: var(--note-fg);
+  border: 1px solid var(--note-edge);
+  border-radius: 1rem;
+  background: var(--note-bg);
+  box-shadow: var(--archive-shadow);
+}
+
+/* Accent hue and chroma, lightness clamped per surface so contrast holds for any accent. */
+@supports (color: oklch(from red l c h)) {
+  .archive-note {
+    --note-sign: oklch(from var(--accent) clamp(var(--sign-l-min), l, var(--sign-l-max)) c h);
+  }
+}
+
+/* Role classes: the only way note content takes colour. */
+.archive-text { color: var(--note-fg); }
+.archive-muted { color: var(--note-muted); }
+.archive-sign { color: var(--note-sign); }
+.archive-sign-bg { background: var(--note-sign); }
+
+.archive-toggle {
+  color: var(--note-fg);
+  text-decoration-color: var(--note-sign);
+}
+
+.archive-toggle:focus-visible {
+  outline: 2px solid var(--note-sign);
+  outline-offset: 2px;
+}
+
+/* Hairline that fades out toward the open edge (direction via --rule-dir). */
+.archive-rule {
+  height: 1px;
+  background: linear-gradient(
+    var(--rule-dir, to right),
+    color-mix(in srgb, var(--accent) 45%, var(--border)),
+    transparent
+  );
+}
+
+@keyframes archive-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.archive-rise {
+  animation: archive-rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-rise { animation: none; }
+}

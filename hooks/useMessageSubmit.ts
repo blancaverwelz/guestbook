@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { MESSAGE_MAX, NAME_MAX } from "@/lib/messageLimits";
 
 export type MessageSubmitState = "IDLE" | "SUBMITTING" | "SUCCESS" | "ERROR";
-
-const NAME_MAX = 80;
-const MESSAGE_MAX = 500;
 
 interface UseMessageSubmitOptions {
   eventId: string;

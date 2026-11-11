@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { MESSAGE_MAX, NAME_MAX } from "@/lib/messageLimits";
 
 /**
  * Server-side message submission (Chat 10).
@@ -42,8 +43,6 @@ import { NextRequest, NextResponse } from "next/server";
  * here either.
  */
 
-const NAME_MAX = 80;
-const MESSAGE_MAX = 500;
 const RATE_LIMIT_WINDOW_SECONDS = 600; // 10 minutes
 const RATE_LIMIT_MAX_SUBMISSIONS = 3;
 
