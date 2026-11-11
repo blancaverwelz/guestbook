@@ -50,7 +50,7 @@ export default function GuestbookFeed({ eventId, eventTitle, messageHref }: Prop
           maxLength={SEARCH_MAX_LENGTH}
         />
       )}
-      <section ref={results} tabIndex={-1} aria-label="Guestbook messages" className="scroll-mt-24 focus:outline-none">
+      <section ref={results} tabIndex={-1} aria-label="Guestbook messages" className="scroll-mt-[calc(6rem+var(--safe-top))] focus:outline-none">
         {error ? (
           <div role="alert" className="flex flex-col items-center gap-3 text-center">
             <p>{error}</p>
@@ -70,7 +70,7 @@ export default function GuestbookFeed({ eventId, eventTitle, messageHref }: Prop
               </p>
             )}
             {data.updated && (
-              <div className="sticky top-16 z-30 mb-6 flex justify-center">
+              <div className="sticky top-[calc(4rem+var(--safe-top))] z-30 mb-6 flex justify-center">
                 <button type="button" onClick={reload} className="min-h-11 rounded-full bg-foreground px-5 text-sm text-background">
                   Show updated page
                 </button>

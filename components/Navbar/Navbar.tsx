@@ -50,10 +50,10 @@ export default function Navbar({ slug, eventTitle }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="safe-area-frame sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav
         aria-label={`${eventTitle} navigation`}
-        className="mx-auto flex w-full max-w-3xl items-center justify-center gap-2 px-4 py-2.5"
+        className="mx-auto flex w-full max-w-3xl items-center justify-center gap-2 px-4 py-1 sm:py-2.5"
       >
         <ul className="flex items-center gap-1">
           {links.map(({ href, label, icon: Icon }) => {
@@ -65,14 +65,14 @@ export default function Navbar({ slug, eventTitle }: NavbarProps) {
                 <Link
                   href={target}
                   aria-current={isActive ? "page" : undefined}
-                  className="flex flex-col items-center gap-0.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{
                     color: isActive ? accent.color : "var(--muted-foreground)",
                     ["--tw-ring-color" as string]: accent.color,
                   }}
                 >
                   <Icon className="h-5 w-5" aria-hidden="true" />
-                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sr-only sm:not-sr-only">{label}</span>
                 </Link>
               </li>
             );
