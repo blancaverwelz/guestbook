@@ -3,36 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PenLine, BookOpen, Images } from "lucide-react";
-import { useAccentColor } from "@/components/Hero/AccentColorProvider";
 
 interface NavbarProps {
   slug: string;
   eventTitle: string;
 }
 
-/**
- * Persistent guest-facing navigation, mounted once in
- * app/events/[slug]/layout.tsx so it appears — identically — on the
- * landing page and all three core experiences (message/guestbook/gallery).
- *
- * Why here and not per-page: the layout already wraps this whole subtree
- * in <AccentColorProvider> (see layout.tsx's own comment on why — one
- * resolved accent, one fetch, shared by every child). Mounting Navbar
- * inside that same provider means it can call useAccentColor() like
- * CTASection does, so the active-link indicator uses the same per-event
- * resolved accent instead of a second hardcoded color.
- *
- * Deliberately does NOT render on /admin/* — that tree never mounts this
- * layout (see app/admin/... route group), so no exclusion logic is needed
- * here.
- *
- * Also hides itself on the landing page (`pathname === base`) — the
- * landing page already has its own primary CTAs (Hero/CTASection) for
- * these same three destinations, so showing this bar there too was
- * redundant. `eventTitle` is kept as a prop (unused visually now) purely
- * for the nav's aria-label, so screen readers still get "X's event
- * navigation" rather than a generic label.
- */
 const links = [
   { href: "", label: "Event", icon: Home },
   { href: "/message", label: "Message", icon: PenLine },
@@ -42,7 +18,6 @@ const links = [
 
 export default function Navbar({ slug, eventTitle }: NavbarProps) {
   const pathname = usePathname();
-  const accent = useAccentColor();
   const base = `/events/${slug}`;
 
   if (pathname === base) {
@@ -52,10 +27,10 @@ export default function Navbar({ slug, eventTitle }: NavbarProps) {
   return (
     <header className="safe-area-frame sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav
-        aria-label={`${eventTitle} navigation`}
-        className="mx-auto flex w-full max-w-3xl items-center justify-center gap-2 px-4 py-1 sm:py-2.5"
+        aria-label={`${eventTitle.trim() || "Event"} navigation`}
+        className="mx-auto max-w-3xl px-2 py-1.5 sm:px-4 sm:py-2"
       >
-        <ul className="flex items-center gap-1">
+        <ul className="grid grid-cols-4 gap-1 sm:flex sm:justify-center sm:gap-2">
           {links.map(({ href, label, icon: Icon }) => {
             const target = `${base}${href}`;
             const isActive = pathname === target;
@@ -65,14 +40,10 @@ export default function Navbar({ slug, eventTitle }: NavbarProps) {
                 <Link
                   href={target}
                   aria-current={isActive ? "page" : undefined}
-                  className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                  style={{
-                    color: isActive ? accent.color : "var(--muted-foreground)",
-                    ["--tw-ring-color" as string]: accent.color,
-                  }}
+                  className="flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-[current=page]:bg-accent/15 aria-[current=page]:font-semibold aria-[current=page]:text-foreground sm:flex-row sm:gap-2 sm:px-4 sm:text-sm"
                 >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                  <span className="sr-only sm:not-sr-only">{label}</span>
+                  <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+                  <span>{label}</span>
                 </Link>
               </li>
             );
